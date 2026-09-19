@@ -11,16 +11,16 @@ async function run() {
   }
 
   console.log('Clearing old demo data...');
-  await db.collection('users').deleteMany({ email: { $regex: '@rflow.com$' } });
+  await db.collection('users').deleteMany({ email: { $regex: '@motherson.com$' } });
 
   console.log('Seeding Demo Users...');
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('Password123', salt);
 
   const users = [
-    { _id: new Types.ObjectId(), name: 'Admin User', email: 'admin@rflow.com', password: passwordHash, role: 'admin' },
-    { _id: new Types.ObjectId(), name: 'Manager User', email: 'manager@rflow.com', password: passwordHash, role: 'manager' },
-    { _id: new Types.ObjectId(), name: 'Dev User', email: 'dev@rflow.com', password: passwordHash, role: 'developer' }
+    { _id: new Types.ObjectId(), name: 'Admin User', email: 'admin@motherson.com', password: passwordHash, role: 'admin' },
+    { _id: new Types.ObjectId(), name: 'Manager User', email: 'manager@motherson.com', password: passwordHash, role: 'manager' },
+    { _id: new Types.ObjectId(), name: 'Dev User', email: 'dev@motherson.com', password: passwordHash, role: 'developer' }
   ];
 
   await db.collection('users').insertMany(users);
@@ -50,7 +50,7 @@ async function run() {
   ];
   await db.collection('tasks').insertMany(tasks);
   
-  console.log('Seeding complete! You can now log in with admin@rflow.com / Password123.');
+  console.log('Seeding complete! You can now log in with admin@motherson.com / Password123.');
 
   await mongoose.disconnect();
 }

@@ -58,9 +58,9 @@ npm start
 ### 5. Test Credentials
 Once the frontend and backend are running, you can log in with the following demo credentials created by the seed script:
 
-- **Admin User:** admin@rflow.com / Password123
-- **Manager User:** manager@rflow.com / Password123
-- **Developer User:** dev@rflow.com / Password123
+- **Admin User:** admin@motherson.com / Password123
+- **Manager User:** manager@motherson.com / Password123
+- **Developer User:** dev@motherson.com / Password123
 
 ## Git Branch Structure
 - `main`: The stable core repository.
