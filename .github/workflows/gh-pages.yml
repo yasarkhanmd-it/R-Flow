@@ -30,6 +30,9 @@ jobs:
         # Make sure to change --base-href if your repo name is different. It should be /<repository-name>/
         run: npx ng build --configuration production --base-href /R-Flow/
 
+      - name: Create 404 fallback for GitHub Pages
+        run: cp ./frontend/dist/frontend-app/browser/index.html ./frontend/dist/frontend-app/browser/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
