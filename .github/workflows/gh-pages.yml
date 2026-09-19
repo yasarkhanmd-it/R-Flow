@@ -1,0 +1,39 @@
+name: Deploy Angular to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Important: give the action permission to write to the gh-pages branch
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Angular Application
+        working-directory: ./frontend
+        # Make sure to change --base-href if your repo name is different. It should be /<repository-name>/
+        run: npx ng build --configuration production --base-href /R-Flow/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/dist/frontend-app/browser
+          publish_branch: gh-pages
+          commit_message: "Deploy Angular to GitHub Pages"
