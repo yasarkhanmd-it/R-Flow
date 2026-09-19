@@ -41,8 +41,8 @@ const validateRegistration = (payload: any) => {
     errors.push(`Please enter a valid email address`);
   }
   if (!payload.department?.trim()) errors.push('Department is required');
-  if (!payload.role?.trim() || !['User', 'Lead', 'Manager'].includes(payload.role)) {
-    errors.push('A valid Role (User, Lead, Manager) is required');
+  if (!payload.role?.trim() || !['Admin', 'User', 'Lead', 'Manager'].includes(payload.role)) {
+    errors.push('A valid Role (Admin, User, Lead, Manager) is required');
   }
   if (!payload.password) errors.push('Password is required');
   if (payload.password !== payload.confirmPassword) {
