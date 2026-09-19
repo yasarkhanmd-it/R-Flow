@@ -1,0 +1,122 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-title">
+      <h1>Notifications & Approvals</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="markAllAsRead()">Mark All as Read</button>
+      <button class="btn btn-primary" (click)="loadData()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="activeTab = 'notifications'">Notifications</button>
+    <button class="tab-btn" [class.active]="activeTab === 'approvals'" (click)="activeTab = 'approvals'" *ngIf="currentUserRole === 'Manager' || currentUserRole === 'Lead'">Approvals</button>
+    <button class="tab-btn" [class.active]="activeTab === 'audit'" (click)="activeTab = 'audit'" *ngIf="currentUserRole === 'Manager' || currentUserRole === 'Lead' || currentUserRole === 'Super Admin'">Audit Trail</button>
+  </div>
+
+  <div class="content-section" *ngIf="activeTab === 'notifications'">
+    <div class="data-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Message</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let notification of notifications" [class.unread]="!notification.read" (click)="markAsRead(notification)" style="cursor: pointer;">
+            <td>{{ notification.createdAt | date:'short' }}</td>
+            <td><span class="badge">{{ notification.type }}</span></td>
+            <td>
+              <strong *ngIf="notification.fromUser">{{ notification.fromUser.employeeName }}</strong>
+              {{ notification.message || 'New notification' }}
+              <span *ngIf="notification.project">in project {{ notification.project.name }}</span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="notification.read ? 'status-completed' : 'status-pending'">
+                {{ notification.read ? 'Read' : 'Unread' }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="notifications.length === 0">
+            <td colspan="4" class="no-data">No notifications found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-section" *ngIf="activeTab === 'approvals'">
+    <div class="data-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Request From</th>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of approvals">
+            <td>{{ request.createdAt | date:'short' }}</td>
+            <td>{{ request.fromUser?.employeeName }}</td>
+            <td>{{ request.project?.name }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="{
+                'status-pending': request.status === 'PENDING',
+                'status-completed': request.status === 'APPROVED',
+                'status-issue': request.status === 'REJECTED'
+              }">
+                {{ request.status }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons" *ngIf="request.status === 'PENDING'">
+                <button class="btn btn-sm btn-primary" (click)="approve(request)">Approve</button>
+                <button class="btn btn-sm btn-outline" (click)="reject(request)">Reject</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="approvals.length === 0">
+            <td colspan="5" class="no-data">No pending approvals</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-section" *ngIf="activeTab === 'audit'">
+    <div class="data-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Action</th>
+            <th>Entity Type</th>
+            <th>Entity Name</th>
+            <th>Description</th>
+            <th>Performed By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of auditLogs">
+            <td>{{ log.createdAt | date:'short' }}</td>
+            <td><strong>{{ log.action }}</strong></td>
+            <td><span class="badge">{{ log.entityType }}</span></td>
+            <td>{{ log.entityName }}</td>
+            <td>{{ log.description }}</td>
+            <td>{{ log.performedBy.employeeName }}</td>
+          </tr>
+          <tr *ngIf="auditLogs.length === 0">
+            <td colspan="6" class="no-data">No audit logs found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

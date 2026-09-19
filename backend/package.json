@@ -1,0 +1,34 @@
+{
+  "name": "rflow-backend",
+  "version": "1.0.0",
+  "description": "RFlow Microservices Workspace Root",
+  "scripts": {
+    "dev:gateway": "cd services/gateway-service && npm run dev",
+    "dev:auth": "cd services/auth-service && npm run dev",
+    "dev:project": "cd services/project-service && npm run dev",
+    "dev:story": "cd services/story-service && npm run dev",
+    "dev:task": "cd services/task-service && npm run dev",
+    "dev:notification": "cd services/notification-service && npm run dev",
+    "dev:dashboard": "cd services/dashboard-service && npm run dev",
+    "dev:report": "cd services/report-service && npm run dev",
+    "services": "concurrently --kill-others-on-fail --names \"GATEWAY,AUTH,PROJECT,STORY,TASK,NOTIFICATION,DASHBOARD,REPORT\" \"npm:dev:gateway\" \"npm:dev:auth\" \"npm:dev:project\" \"npm:dev:story\" \"npm:dev:task\" \"npm:dev:notification\" \"npm:dev:dashboard\" \"npm:dev:report\"",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.1.2",
+    "concurrently": "^10.0.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.8.1"
+  }
+}

@@ -1,0 +1,341 @@
+<div class="board-main-layout" style="display: flex; gap: 1.5rem; width: 100%; align-items: stretch;"
+    *ngIf="activeTab === 'Board'">
+
+    <!-- Kanban Filter Controls -->
+    <div class="filter-controls-row" style="padding: 0 2rem 1rem 2rem;">
+      <div class="filters-left">
+        <div class="search-input-wrapper">
+          <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+          <input type="text" placeholder="Search task..." [(ngModel)]="searchQuery" (ngModelChange)="filterAndOrganizeTasks()" class="form-control-search">
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedPriority" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Priority: All</option>
+            <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedStatus" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Status: All</option>
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper" *ngIf="project">
+          <select [(ngModel)]="selectedAssignee" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Assignee: All</option>
+            <option [value]="project.managerId?._id">{{ project.managerId?.employeeName }} (Manager)</option>
+            <option *ngFor="let m of project.members" [value]="m._id">{{ m.employeeName }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedType" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Type: All</option>
+            <option *ngFor="let t of taskTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <button class="btn-reset" (click)="resetFilters()" title="Reset Filters">
+          <lucide-icon [img]="RotateCcw" [size]="16"></lucide-icon>
+          <span>Reset</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- Kanban Board Container -->
+    <div class="board-container" cdkDropListGroup style="flex: 1; min-width: 0;">
+
+      <!-- 📝 TO DO Column -->
+      <div class="board-column border-todo">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-todo"></span>
+            <h3>📝 TO DO</h3>
+            <span class="task-count-badge">{{ todoTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="todoList" cdkDropList [cdkDropListData]="todoTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="todoTasks.length === 0">
+            <span class="empty-icon">📋</span>
+            <h4>No tasks in To Do</h4>
+            <p>Drag tasks here to start</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of todoTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🚀 IN PROGRESS Column -->
+      <div class="board-column border-inprogress">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-inprogress"></span>
+            <h3>🚀 IN PROGRESS</h3>
+            <span class="task-count-badge">{{ inProgressTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="inProgressList" cdkDropList [cdkDropListData]="inProgressTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="inProgressTasks.length === 0">
+            <span class="empty-icon">⚡</span>
+            <h4>No tasks in Progress</h4>
+            <p>Drag tasks here to update status</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of inProgressTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👀 REVIEW Column -->
+      <div class="board-column border-review">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-review"></span>
+            <h3>👀 REVIEW</h3>
+            <span class="task-count-badge">{{ reviewTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="reviewList" cdkDropList [cdkDropListData]="reviewTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="reviewTasks.length === 0">
+            <span class="empty-icon">🔍</span>
+            <h4>No tasks in Review</h4>
+            <p>Drag tasks here to check off quality</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of reviewTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ DONE Column -->
+      <div class="board-column border-done">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-done"></span>
+            <h3>✅ DONE</h3>
+            <span class="task-count-badge">{{ doneTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="doneList" cdkDropList [cdkDropListData]="doneTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="doneTasks.length === 0">
+            <span class="empty-icon">🎉</span>
+            <h4>No tasks in Done</h4>
+            <p>Complete tasks to see them here</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of doneTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+

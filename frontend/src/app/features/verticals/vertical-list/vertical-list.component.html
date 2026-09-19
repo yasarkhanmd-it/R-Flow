@@ -1,0 +1,271 @@
+<div class="dept-vert-page">
+  <!-- Page Header & Tab Toggle Row -->
+  <div class="page-header">
+    <div class="header-title-area">
+      <h1>Departments & Business Verticals</h1>
+      <p class="subtitle">Manage organizational units, project assignments, vertical alignment, and financial budgets.</p>
+    </div>
+
+    <!-- Segmented View Toggle Tabs -->
+    <div class="view-toggle-bar">
+      <button [class.active]="activeTab === 'all'" (click)="activeTab = 'all'">
+        <lucide-icon [img]="Layers" [size]="14"></lucide-icon>
+        <span>All Sections</span>
+      </button>
+      <button [class.active]="activeTab === 'departments'" (click)="activeTab = 'departments'">
+        <lucide-icon [img]="Building2" [size]="14"></lucide-icon>
+        <span>Departments ({{ departments.length }})</span>
+      </button>
+      <button [class.active]="activeTab === 'verticals'" (click)="activeTab = 'verticals'">
+        <lucide-icon [img]="Layers" [size]="14"></lucide-icon>
+        <span>Business Verticals ({{ verticals.length }})</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    <lucide-icon [img]="CheckCircle" [size]="18"></lucide-icon>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    <lucide-icon [img]="AlertCircle" [size]="18"></lucide-icon>
+    <span>{{ errorMessage }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading departments and business verticals...</p>
+  </div>
+
+  <!-- Main Content Panels -->
+  <div *ngIf="!isLoading" class="panels-container">
+    
+    <!-- 1. Departments Panel Card -->
+    <div class="panel-card" *ngIf="activeTab === 'all' || activeTab === 'departments'">
+      <div class="panel-top-row">
+        <div class="panel-header">
+          <h2>Departments <span class="badge-count">{{ filteredDepartments.length }}</span></h2>
+          <p class="panel-subtitle">
+            Rename updates every project, task, and resource link. Records retain historical references.
+          </p>
+        </div>
+
+        <!-- Controls: Search + Add Row -->
+        <div class="panel-controls">
+          <div class="search-box">
+            <lucide-icon [img]="Search" [size]="14" class="search-icon"></lucide-icon>
+            <input 
+              type="text" 
+              class="search-input" 
+              placeholder="Search departments..." 
+              [(ngModel)]="deptSearchQuery"
+            />
+          </div>
+
+          <div class="add-row">
+            <input 
+              type="text" 
+              class="add-input" 
+              placeholder="New department name"
+              [(ngModel)]="newDepartmentName"
+              (keydown.enter)="addDepartment()"
+              [disabled]="isAddingDept"
+            />
+            <button class="btn-add" (click)="addDepartment()" [disabled]="!newDepartmentName.trim() || isAddingDept">
+              <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Departments Table -->
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="th-name">DEPARTMENT NAME</th>
+              <th class="th-stat text-center">LINKED PROJECTS</th>
+              <th class="th-stat text-center">TASKS</th>
+              <th class="th-stat text-center">RESOURCES</th>
+              <th class="th-actions text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of filteredDepartments">
+              <td class="td-name font-bold text-slate-900">
+                <div class="name-wrapper">
+                  <div class="icon-avatar">
+                    <lucide-icon [img]="Building2" [size]="15"></lucide-icon>
+                  </div>
+                  <span>{{ d.departmentName }}</span>
+                </div>
+              </td>
+              <td class="td-stat text-center font-medium">
+                <span class="badge-stat" [class.has-count]="d.projectCount">{{ (d.projectCount && d.projectCount > 0) ? d.projectCount : '0' }} projects</span>
+              </td>
+              <td class="td-stat text-center font-medium text-slate-600">{{ (d.taskCount && d.taskCount > 0) ? d.taskCount : '—' }}</td>
+              <td class="td-stat text-center font-medium text-slate-600">{{ (d.resourceCount && d.resourceCount > 0) ? d.resourceCount : '—' }}</td>
+              <td class="td-actions text-right">
+                <div class="action-buttons">
+                  <button class="btn-action btn-rename" (click)="openRenameModal('department', d)" title="Rename Department">
+                    <lucide-icon [img]="Pencil" [size]="13"></lucide-icon>
+                    <span>Rename</span>
+                  </button>
+                  <button class="btn-action btn-delete" (click)="confirmDelete('department', d)" title="Delete Department">
+                    <lucide-icon [img]="Trash2" [size]="13"></lucide-icon>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredDepartments.length === 0">
+              <td colspan="5" class="empty-cell">No departments found matching search criteria.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. Business Verticals Panel Card -->
+    <div class="panel-card" *ngIf="activeTab === 'all' || activeTab === 'verticals'">
+      <div class="panel-top-row">
+        <div class="panel-header">
+          <h2>Business Verticals <span class="badge-count">{{ filteredVerticals.length }}</span></h2>
+          <p class="panel-subtitle">
+            Strategic business domains linking projects, resources, and department execution.
+          </p>
+        </div>
+
+        <!-- Controls: Search + Add Row -->
+        <div class="panel-controls">
+          <div class="search-box">
+            <lucide-icon [img]="Search" [size]="14" class="search-icon"></lucide-icon>
+            <input 
+              type="text" 
+              class="search-input" 
+              placeholder="Search verticals..." 
+              [(ngModel)]="vertSearchQuery"
+            />
+          </div>
+
+          <div class="add-row">
+            <input 
+              type="text" 
+              class="add-input" 
+              placeholder="New business vertical"
+              [(ngModel)]="newVerticalName"
+              (keydown.enter)="addVertical()"
+              [disabled]="isAddingVert"
+            />
+            <button class="btn-add" (click)="addVertical()" [disabled]="!newVerticalName.trim() || isAddingVert">
+              <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Verticals Table -->
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="th-name">BUSINESS VERTICAL</th>
+              <th class="th-stat text-center">PROJECTS COUNT</th>
+              <th class="th-stat text-right">TOTAL BUDGET</th>
+              <th class="th-actions text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of filteredVerticals">
+              <td class="td-name font-bold text-slate-900">
+                <div class="name-wrapper">
+                  <div class="icon-avatar vertical-avatar">
+                    <lucide-icon [img]="Layers" [size]="15"></lucide-icon>
+                  </div>
+                  <span>{{ v.name }}</span>
+                </div>
+              </td>
+              <td class="td-stat text-center font-medium">
+                <span class="badge-stat has-count">{{ (v.projectCount && v.projectCount > 0) ? v.projectCount : '0' }} projects</span>
+              </td>
+              <td class="td-stat text-right font-bold text-slate-800">{{ formatCurrencyShort(v.totalBudget) }}</td>
+              <td class="td-actions text-right">
+                <div class="action-buttons">
+                  <button class="btn-action btn-rename" (click)="openRenameModal('vertical', v)" title="Rename Vertical">
+                    <lucide-icon [img]="Pencil" [size]="13"></lucide-icon>
+                    <span>Rename</span>
+                  </button>
+                  <button class="btn-action btn-delete" (click)="confirmDelete('vertical', v)" title="Delete Vertical">
+                    <lucide-icon [img]="Trash2" [size]="13"></lucide-icon>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredVerticals.length === 0">
+              <td colspan="4" class="empty-cell">No business verticals found matching search criteria.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Rename Modal -->
+  <div *ngIf="showRenameModal" class="modal-overlay" (click)="closeRenameModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Rename {{ renameType === 'department' ? 'Department' : 'Business Vertical' }}</h3>
+        <button class="btn-close" (click)="closeRenameModal()">
+          <lucide-icon [img]="X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Name</label>
+        <input 
+          type="text" 
+          class="modal-input" 
+          [(ngModel)]="renameName" 
+          (keydown.enter)="saveRename()"
+          placeholder="Enter new name"
+        />
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeRenameModal()">Cancel</button>
+
+        <button class="btn-primary" (click)="saveRename()" [disabled]="!renameName.trim() || isSubmittingRename">
+          {{ isSubmittingRename ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div *ngIf="showDeleteModal" class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal-card modal-delete" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Delete {{ deleteType === 'department' ? 'Department' : 'Business Vertical' }}</h3>
+        <button class="btn-close" (click)="cancelDelete()">
+          <lucide-icon [img]="X" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ deleteType === 'department' ? deleteItem?.departmentName : deleteItem?.name }}</strong>?</p>
+        <p class="text-subtle">This action will remove it from future selections. Existing records will retain their name link.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+
+        <button class="btn-danger" (click)="executeDelete()" [disabled]="isSubmittingDelete">
+          {{ isSubmittingDelete ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

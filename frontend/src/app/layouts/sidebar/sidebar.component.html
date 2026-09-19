@@ -1,0 +1,47 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+  <div class="sidebar-header">
+    <div class="logo-container" *ngIf="!isCollapsed">
+      <div class="logo-mark">R</div>
+      <span class="logo-text">RFlow</span>
+    </div>
+    <div class="logo-container-mini" *ngIf="isCollapsed">
+      <div class="logo-mark">R</div>
+    </div>
+    <button class="toggle-btn" type="button" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+      <lucide-icon [img]="isCollapsed ? ChevronRight : ChevronLeft" [size]="18"></lucide-icon>
+    </button>
+  </div>
+
+  <div class="sidebar-scrollable">
+    <ul class="menu-list">
+      <li *ngFor="let item of filteredMenuItems">
+        <a [routerLink]="item.route" routerLinkActive="active" class="menu-link" [title]="item.label">
+          <lucide-icon [img]="item.icon" [size]="18" class="menu-icon"></lucide-icon>
+          <span class="menu-text" *ngIf="!isCollapsed">{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="sidebar-footer">
+    <ul class="menu-list">
+      <li *ngFor="let item of filteredBottomMenuItems">
+        <a [routerLink]="item.route" routerLinkActive="active" class="menu-link" [title]="item.label">
+          <lucide-icon [img]="item.icon" [size]="18" class="menu-icon"></lucide-icon>
+          <span class="menu-text" *ngIf="!isCollapsed">{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer-box" *ngIf="!isCollapsed">
+      <div class="footer-logo">
+        <span class="logo-mark mini">R</span>
+        <span class="logo-text">RFlow</span>
+      </div>
+      <div class="footer-subtitle">Project Management System</div>
+      <div class="footer-divider"></div>
+      <div class="footer-meta">© 2026 ROBIS</div>
+      <div class="footer-meta">Version 1.0</div>
+    </div>
+  </div>
+</aside>

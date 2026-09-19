@@ -1,0 +1,488 @@
+<div class="portfolio-page">
+  <div class="page-header">
+    <h1>Portfolio Dashboard</h1>
+    <p>High-level overview of all active projects, financials, and cross-project risks.</p>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading portfolio data...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading && portfolioData">
+    <!-- 7 KPI Cards Row -->
+    <div class="portfolio-kpi-row">
+      <!-- 1. ACTIVE PROJECTS -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">Active Projects</div>
+        <div class="kpi-main-val">{{ portfolioData.stats.activeProjects || portfolioData.stats.totalProjects || 0 }}</div>
+        <div class="kpi-subtext">{{ portfolioData.stats.completedProjects || 0 }} completed</div>
+      </div>
+
+      <!-- 2. ON TRACK / AT RISK / DELAYED -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">On Track / At Risk / Delayed</div>
+        <div class="kpi-main-val text-space">
+          <span>{{ portfolioData.stats.onTrackCount || 0 }}</span> · 
+          <span style="color: #d97706;">{{ portfolioData.stats.atRiskCount || 0 }}</span> · 
+          <span style="color: #dc2626;">{{ portfolioData.stats.delayedCount || 0 }}</span>
+        </div>
+      </div>
+
+      <!-- 3. BUDGET VS SPEND -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">Budget vs Spend</div>
+        <div class="kpi-main-val">{{ formatCurrencyShort(portfolioData.stats.actualCost) }}</div>
+        <div class="kpi-subtext">of {{ formatCurrencyShort(portfolioData.stats.totalBudget) }} budgeted</div>
+      </div>
+
+      <!-- 4. PORTFOLIO FCF -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">Portfolio FCF</div>
+        <div class="kpi-main-val text-teal">{{ formatCurrencyShort(portfolioData.stats.portfolioFCF) }}</div>
+      </div>
+
+      <!-- 5. AVG NET MARGIN -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">Avg Net Margin</div>
+        <div class="kpi-main-val text-teal">{{ portfolioData.stats.avgNetMargin || 0 }}%</div>
+        <div class="kpi-subtext">target 15%</div>
+      </div>
+
+      <!-- 6. OPEN TASKS -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">Open Tasks</div>
+        <div class="kpi-main-val">{{ portfolioData.stats.openTasksCount || 0 }}</div>
+        <div class="kpi-subtext">
+          <span [style.color]="portfolioData.stats.overdueTasksCount > 0 ? '#dc2626' : '#64748b'">{{ portfolioData.stats.overdueTasksCount || 0 }} overdue</span> · 
+          <span>{{ portfolioData.stats.blockedTasksCount || 0 }} blocked</span>
+        </div>
+      </div>
+
+      <!-- 7. BOM RELEASES -->
+      <div class="kpi-card-box">
+        <div class="kpi-label">BOM Releases</div>
+        <div class="kpi-main-val">
+          <span>{{ portfolioData.stats.deliveredBomsCount || 0 }}</span><span style="color: #94a3b8; font-weight: 500;"> / {{ portfolioData.stats.totalBomsCount || 0 }}</span>
+        </div>
+        <div class="kpi-subtext">
+          <span>{{ portfolioData.stats.pendingBomsCount || 0 }} pending delivery</span> · 
+          <span [style.color]="portfolioData.stats.overdueBomsCount > 0 ? '#dc2626' : '#64748b'">{{ portfolioData.stats.overdueBomsCount || 0 }} overdue</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Health · Budget-Weighted Bar -->
+    <div class="budget-weighted-panel">
+      <div class="panel-top-header">
+        <div class="title-wrap">
+          <span class="main-title">Portfolio health · budget-weighted</span>
+        </div>
+        <div class="right-desc">
+          Each block = one project · width = share of total budget · click to open
+        </div>
+      </div>
+
+      <div class="budget-bar-container">
+        <div 
+          *ngFor="let p of portfolioData.projectMatrix" 
+          class="bar-segment"
+          [style.width.%]="getProjectWidth(p)"
+          [style.background-color]="getSegmentColor(p.health)"
+          (click)="openProjectBoard(p._id)"
+          [attr.title]="p.name + ' | Budget: ' + formatCurrencyShort(p.budget) + ' | Health: ' + p.health + ' | Progress: ' + p.progress + '%'">
+          
+          <!-- Inner fill inside block = % complete -->
+          <div 
+            class="segment-progress-fill" 
+            [style.width.%]="p.progress">
+          </div>
+        </div>
+
+        <div *ngIf="portfolioData.projectMatrix?.length === 0" style="width: 100%; text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 6px;">
+          No projects to display
+        </div>
+      </div>
+
+      <!-- Legend Row -->
+      <div class="bar-legend-row">
+        <div class="legend-item"><span class="dot green"></span> On Track</div>
+        <div class="legend-item"><span class="dot amber"></span> At Risk</div>
+        <div class="legend-item"><span class="dot red"></span> Delayed</div>
+        <div class="legend-item"><span class="dot blue"></span> Completed</div>
+        <div class="legend-note">Lighter fill inside a block = % complete</div>
+      </div>
+    </div>
+
+    <!-- 1. Project Timeline · Gantt Panel -->
+    <div class="portfolio-gantt-panel">
+      <div class="gantt-header-row">
+        <h3 class="panel-title-text">Project timeline · Gantt</h3>
+        <div class="mode-toggle-group">
+          <button [class.active]="ganttViewMode === 'Projects'" (click)="ganttViewMode = 'Projects'">Projects</button>
+          <button [class.active]="ganttViewMode === 'Tasks + resources'" (click)="ganttViewMode = 'Tasks + resources'">Tasks + resources</button>
+        </div>
+      </div>
+
+      <div class="gantt-chart-wrapper">
+        <!-- Scale Header -->
+        <div class="gantt-scale-header">
+          <div class="project-col-label">Project / Dept</div>
+          <div class="months-scale-container">
+            <div class="month-col" *ngFor="let m of timelineMonths" [class.current-month]="m.isCurrentMonth">{{ m.name }}</div>
+          </div>
+        </div>
+
+        <!-- Gantt Rows -->
+        <div class="gantt-rows-container">
+          <div class="gantt-row-item" *ngFor="let p of portfolioData.ganttTimeline">
+            <!-- Left Info -->
+            <div class="project-info-cell" (click)="openProjectBoard(p._id)">
+              <span class="p-name">{{ p.name }}</span>
+              <span class="p-dept">{{ p.departmentName || 'General' }}</span>
+            </div>
+
+            <!-- Right Timeline Track -->
+            <div class="timeline-track-cell">
+              <!-- Project Gantt Bar -->
+              <div 
+                class="gantt-bar-fill" 
+                [style.left.%]="getGanttBarLeft(p.startDate)"
+                [style.width.%]="getGanttBarWidth(p.startDate, p.expectedEndDate)"
+                [style.background-color]="getSegmentColor(p.health)"
+                (click)="openProjectBoard(p._id)"
+                [attr.title]="p.name + ' (' + p.departmentName + ') | Health: ' + p.health + ' | Progress: ' + p.progress + '%'">
+                
+                <!-- Inner Solid Progress Fill (% complete) -->
+                <div class="gantt-progress-solid" [style.width.%]="p.progress"></div>
+
+                <!-- Milestone Diamonds -->
+                <ng-container *ngFor="let ms of p.milestones">
+                  <div 
+                    *ngIf="getMilestoneLeft(ms.dueDate) >= 0"
+                    class="milestone-diamond"
+                    [class.done]="ms.status === 'Completed'"
+                    [class.upcoming]="ms.status === 'In Progress' || ms.status === 'Open'"
+                    [class.overdue]="ms.status === 'Delayed'"
+                    [style.left.%]="getMilestoneLeft(ms.dueDate)"
+                    [attr.title]="'Milestone: ' + ms.title + ' (' + ms.status + ')'">
+                    ◆
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!portfolioData.ganttTimeline || portfolioData.ganttTimeline.length === 0" style="padding: 2rem; text-align: center; color: #94a3b8;">
+            No timeline projects found.
+          </div>
+        </div>
+      </div>
+
+      <!-- Gantt Footer Legend -->
+      <div class="gantt-footer-legend">
+        Solid fill = % complete · ◆ ◆ = milestone (teal done, amber upcoming, red overdue) · highlighted header = current month · click to edit.
+      </div>
+    </div>
+
+    <!-- 2. Department Comparison Panel -->
+    <div class="comparison-panel-box">
+      <div class="panel-header-simple">
+        <h2>Department comparison</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="comp-data-table">
+          <thead>
+            <tr>
+              <th>DEPARTMENT</th>
+              <th>PROJECTS</th>
+              <th>AVG PROGRESS</th>
+              <th>BUDGET</th>
+              <th>ACTUAL</th>
+              <th>VARIANCE</th>
+              <th>FCF</th>
+              <th>AVG MARGIN</th>
+              <th>AT RISK / DELAYED</th>
+              <th>OPEN TASKS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of portfolioData.departmentComparison">
+              <td class="font-bold text-slate-900">{{ d.department }}</td>
+              <td>{{ d.projects }}</td>
+              <td>
+                <div class="progress-bar-chip">
+                  <div class="progress-track">
+                    <div class="progress-bar-val" [style.width.%]="d.avgProgress"></div>
+                  </div>
+                  <span class="pct-text">{{ d.avgProgress }}%</span>
+                </div>
+              </td>
+              <td>{{ formatCurrencyShort(d.budget) }}</td>
+              <td>{{ formatCurrencyShort(d.actual) }}</td>
+              <td>
+                <span [style.color]="d.variancePct <= 0 ? '#10b981' : '#ef4444'" class="font-semibold">
+                  {{ d.variancePct > 0 ? '+' : '' }}{{ d.variancePct }}%
+                </span>
+              </td>
+              <td>
+                <span [style.color]="d.fcf >= 0 ? '#0d9488' : '#ef4444'" class="font-semibold">
+                  {{ formatCurrencyShort(d.fcf) }}
+                </span>
+              </td>
+              <td class="font-semibold text-emerald-600">{{ d.avgMarginPct }}%</td>
+              <td>
+                <span *ngIf="d.atRiskOrDelayed > 0" class="text-amber-600 font-semibold">{{ d.atRiskOrDelayed }}</span>
+                <span *ngIf="d.atRiskOrDelayed === 0" class="text-slate-400">—</span>
+              </td>
+              <td>
+                <span>{{ d.openTasksCount }}</span>
+                <span *ngIf="d.overdueTasksCount > 0" class="text-red-600 ml-1">({{ d.overdueTasksCount }} overdue)</span>
+                <span *ngIf="d.openTasksCount === 0" class="text-slate-400">—</span>
+              </td>
+            </tr>
+            <tr *ngIf="!portfolioData.departmentComparison || portfolioData.departmentComparison.length === 0">
+              <td colspan="10" style="text-align: center; padding: 1.5rem; color: #94a3b8;">No department comparison data.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. By Business Vertical Panel -->
+    <div class="comparison-panel-box">
+      <div class="panel-header-simple">
+        <h2>By business vertical</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="comp-data-table">
+          <thead>
+            <tr>
+              <th>VERTICAL</th>
+              <th>PROJECTS</th>
+              <th>BUDGET</th>
+              <th>ACTUAL</th>
+              <th>FCF</th>
+              <th>PENDING INFLOWS</th>
+              <th>AVG MARGIN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of portfolioData.verticalComparison">
+              <td class="font-bold text-slate-900">{{ v.vertical }}</td>
+              <td>{{ v.projects }}</td>
+              <td>{{ formatCurrencyShort(v.budget) }}</td>
+              <td>{{ formatCurrencyShort(v.actual) }}</td>
+              <td>
+                <span [style.color]="v.fcf >= 0 ? '#0d9488' : '#ef4444'" class="font-semibold">
+                  {{ formatCurrencyShort(v.fcf) }}
+                </span>
+              </td>
+              <td>
+                <span *ngIf="v.pendingInflows > 0" class="text-amber-600 font-semibold">{{ formatCurrencyShort(v.pendingInflows) }}</span>
+                <span *ngIf="v.pendingInflows === 0" class="text-slate-400">—</span>
+              </td>
+              <td class="font-semibold text-emerald-600">{{ v.avgMarginPct }}%</td>
+            </tr>
+            <tr *ngIf="!portfolioData.verticalComparison || portfolioData.verticalComparison.length === 0">
+              <td colspan="7" style="text-align: center; padding: 1.5rem; color: #94a3b8;">No vertical comparison data.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Portfolio Charts Row: Budget vs Actual by Department & Profitability Ranking -->
+    <div class="portfolio-charts-row">
+      <!-- Left Chart: Budget vs actual by department -->
+      <div class="chart-card">
+        <h3 class="chart-title">Budget vs actual by department</h3>
+        <div class="dept-chart-container">
+          <div class="y-axis-labels">
+            <span>{{ formatCurrencyShort(getDeptChartMaxY()) }}</span>
+            <span>{{ formatCurrencyShort(getDeptChartMaxY() * 0.75) }}</span>
+            <span>{{ formatCurrencyShort(getDeptChartMaxY() * 0.5) }}</span>
+            <span>{{ formatCurrencyShort(getDeptChartMaxY() * 0.25) }}</span>
+            <span>₹0</span>
+          </div>
+          <div class="chart-plot-area">
+            <div class="grid-lines">
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+              <div class="grid-line"></div>
+            </div>
+            <div class="bars-container">
+              <div class="dept-bar-group" *ngFor="let dept of portfolioData.departmentComparison">
+                <div class="bars-wrapper">
+                  <div class="bar bar-budget" 
+                       [style.height.%]="getDeptChartMaxY() > 0 ? (dept.budget / getDeptChartMaxY()) * 100 : 0"
+                       [title]="'Budget: ' + formatCurrencyShort(dept.budget)"></div>
+                  <div class="bar bar-actual" 
+                       [style.height.%]="getDeptChartMaxY() > 0 ? (dept.actual / getDeptChartMaxY()) * 100 : 0"
+                       [title]="'Actual: ' + formatCurrencyShort(dept.actual)"></div>
+                </div>
+                <span class="dept-name">{{ dept.department }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-color color-budget"></span>
+            <span>Budget</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color color-actual"></span>
+            <span>Actual</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Chart: Profitability ranking · net margin % -->
+      <div class="chart-card">
+        <h3 class="chart-title">Profitability ranking · net margin %</h3>
+        <div class="margin-chart-container">
+          <div class="target-line-15" title="Target margin: 15%"></div>
+          <div class="margin-rows">
+            <div class="margin-row" *ngFor="let proj of getRankedProjects()">
+              <div class="proj-label" [title]="proj.name">{{ proj.name }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="proj.marginPct" [title]="proj.name + ': ' + proj.marginPct + '%'"></div>
+              </div>
+              <span class="margin-val-label">{{ proj.marginPct }}%</span>
+            </div>
+          </div>
+          <div class="x-axis-scale">
+            <span style="left: 0%">0%</span>
+            <span style="left: 25%">25%</span>
+            <span style="left: 50%">50%</span>
+            <span style="left: 75%">75%</span>
+            <span style="left: 100%">100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Projects Overview Matrix -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2><lucide-icon [img]="Briefcase" [size]="20"></lucide-icon> Projects Overview Matrix</h2>
+        </div>
+        <div class="panel-body table-responsive p-0">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th class="text-center">Risks</th>
+                <th class="text-center">Issues</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of portfolioData.projectMatrix">
+                <td>
+                  <span class="project-name">{{ p.name }}</span>
+                  <span class="manager-name">Mgr: {{ p.managerName }}</span>
+                </td>
+                <td>{{ p.status }}</td>
+                <td>
+                  <div class="progress-wrapper">
+                    <div class="progress-bar-bg">
+                      <div class="progress-fill" [style.width.%]="p.progress"></div>
+                    </div>
+                    <span class="progress-text">{{ p.progress }}%</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="risk-badge" [class.zero]="p.openRisks === 0">{{ p.openRisks }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="risk-badge" [class.zero]="p.openIssues === 0">{{ p.openIssues }}</span>
+                </td>
+              </tr>
+              <tr *ngIf="portfolioData.projectMatrix?.length === 0">
+                <td colspan="5" class="text-center py-4" style="color: #64748b;">No projects available.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Timeline & Financials -->
+      <div class="dashboard-right">
+        <!-- Financial Snapshot -->
+        <div class="panel mb-4">
+          <div class="panel-header">
+            <h2><lucide-icon [img]="DollarSign" [size]="20"></lucide-icon> Financial Snapshot</h2>
+          </div>
+          <div class="panel-body">
+            <div style="margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">
+                <span>Total Budget</span>
+                <span style="font-weight: 600; color: #0f172a;">₹{{ portfolioData.stats.totalBudget.toLocaleString() }}</span>
+              </div>
+              <div class="progress-wrapper">
+                <div class="progress-bar-bg" style="height: 8px;">
+                  <div class="progress-fill" style="width: 100%; background: #3b82f6;"></div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">
+                <span>Actual Cost (Outflow)</span>
+                <span style="font-weight: 600; color: #0f172a;">₹{{ portfolioData.stats.actualCost.toLocaleString() }}</span>
+              </div>
+              <div class="progress-wrapper">
+                <div class="progress-bar-bg" style="height: 8px;">
+                  <div class="progress-fill" [style.width.%]="portfolioData.stats.totalBudget ? Math.min((portfolioData.stats.actualCost / portfolioData.stats.totalBudget)*100, 100) : 0" style="background: #ef4444;"></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem;">
+                <span>Realized Revenue (Inflow)</span>
+                <span style="font-weight: 600; color: #0f172a;">₹{{ portfolioData.stats.realizedRevenue.toLocaleString() }}</span>
+              </div>
+              <div class="progress-wrapper">
+                <div class="progress-bar-bg" style="height: 8px;">
+                  <div class="progress-fill" [style.width.%]="portfolioData.stats.totalBudget ? Math.min((portfolioData.stats.realizedRevenue / portfolioData.stats.totalBudget)*100, 100) : 0" style="background: #10b981;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming Milestones -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2><lucide-icon [img]="Flag" [size]="20"></lucide-icon> Upcoming Milestones</h2>
+          </div>
+          <div class="panel-body">
+            <div class="timeline-list" *ngIf="portfolioData.upcomingMilestones?.length > 0">
+              <div class="timeline-item" *ngFor="let m of portfolioData.upcomingMilestones">
+                <div class="timeline-date">
+                  <span class="month">{{ m.dueDate | date:'MMM' }}</span>
+                  <span class="day">{{ m.dueDate | date:'dd' }}</span>
+                </div>
+                <div class="timeline-divider"></div>
+                <div class="timeline-content">
+                  <h4 class="ms-title">{{ m.title }}</h4>
+                  <div class="ms-project">{{ m.projectName }}</div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="portfolioData.upcomingMilestones?.length === 0" style="color: #64748b; text-align: center; padding: 1rem;">
+              No major milestones in the next 30 days.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </ng-container>
+</div>

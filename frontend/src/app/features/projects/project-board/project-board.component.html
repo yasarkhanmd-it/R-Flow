@@ -1,0 +1,2673 @@
+
+
+<div class="project-board-layout">
+  
+  <!-- PROJECT HEADER -->
+  <header class="pb-header-new">
+    <div class="pb-header-top">
+      <div class="pb-breadcrumbs">
+        <span>My Projects</span>
+        <lucide-icon [img]="ChevronRight" [size]="14"></lucide-icon>
+        <span class="active">{{ project?.name }}</span>
+      </div>
+    </div>
+    
+    <div class="pb-header-main" *ngIf="project">
+      <div class="pb-header-left">
+        <!-- BACK BUTTON -->
+        <button class="btn btn-outline icon-only" style="margin-right: 12px;" (click)="goBack()" title="Back to Projects">
+          <lucide-icon [img]="ArrowLeft" [size]="18"></lucide-icon>
+        </button>
+        <!-- Square Logo -->
+        <div class="pb-project-icon">
+          {{ project.name.charAt(0) | uppercase }}
+        </div>
+        
+        <div class="pb-title-section">
+          <div class="pb-title-row">
+            <h2>{{ project.name }}</h2>
+            <span class="badge badge-success">{{ project.status || 'Active' }}</span>
+          </div>
+          <div class="pb-meta-row">
+            <div class="pb-meta-item">
+              <lucide-icon [img]="User" [size]="14"></lucide-icon>
+              <span>Manager: <strong>{{ (project.managerId).employeeName || 'Unassigned' }}</strong></span>
+            </div>
+            <div class="pb-meta-item">
+              <lucide-icon [img]="Users" [size]="14"></lucide-icon>
+              <span>Lead: <strong>{{ (project.leadId)?.employeeName || 'Unassigned' }}</strong></span>
+            </div>
+            <div class="pb-meta-item">
+              <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
+              <span>Target: <strong>{{ formatDate(project.expectedEndDate) || 'Not set' }}</strong></span>
+            </div>
+            <div class="pb-meta-item pb-progress-item">
+              <span>Progress: <strong>{{ progressPercentage }}%</strong></span>
+              <div class="mini-progress-bar"><div class="fill" [style.width.%]="progressPercentage"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="pb-header-right">
+        <button class="btn btn-primary" (click)="openNewTaskModal()">
+          <lucide-icon [img]="Plus" [size]="16"></lucide-icon> New Task
+        </button>
+        <button class="btn btn-outline icon-only">
+          <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HORIZONTAL GROUPED NAVIGATION -->
+  <div class="pb-nav-horizontal">
+    <div class="pb-nav-scroll-area">
+      <button class="pb-nav-tab" [class.active]="activeTab === 'Overview'" (click)="switchTab('Overview')">
+        <lucide-icon [img]="LayoutDashboard" [size]="16"></lucide-icon> Overview
+      </button>
+      
+      <div class="pb-nav-group-dropdown" [class.show]="openDropdown === 'Planning'">
+        <button class="pb-nav-tab" [class.active]="['Board', 'Timeline', 'Milestones', 'Modules', 'Story'].includes(activeTab)" (click)="toggleDropdown('Planning', $event)">
+          <lucide-icon [img]="Briefcase" [size]="16"></lucide-icon> Planning <lucide-icon [img]="ChevronDown" [size]="14" class="ml-1 opacity-50"></lucide-icon>
+        </button>
+        <div class="pb-dropdown-menu">
+          <button [class.active]="activeTab === 'Board'" (click)="switchTab('Board')">Task Board</button>
+          <button [class.active]="activeTab === 'Story'" (click)="switchTab('Story')">Story</button>
+          <button [class.active]="activeTab === 'Milestones'" (click)="switchTab('Milestones')">Milestones</button>
+          <button [class.active]="activeTab === 'Modules'" (click)="switchTab('Modules')">Modules</button>
+        </div>
+      </div>
+
+      <div class="pb-nav-group-dropdown" [class.show]="openDropdown === 'Resources'">
+        <button class="pb-nav-tab" [class.active]="['Members', 'Departments', 'Resources'].includes(activeTab)" (click)="toggleDropdown('Resources', $event)">
+          <lucide-icon [img]="Users" [size]="16"></lucide-icon> Resources <lucide-icon [img]="ChevronDown" [size]="14" class="ml-1 opacity-50"></lucide-icon>
+        </button>
+        <div class="pb-dropdown-menu">
+          <button [class.active]="activeTab === 'Members'" (click)="switchTab('Members')">Members</button>
+          <button [class.active]="activeTab === 'Departments'" (click)="switchTab('Departments')">Departments</button>
+          <button [class.active]="activeTab === 'Resources'" (click)="switchTab('Resources')">Resource & Effort</button>
+        </div>
+      </div>
+
+      <div class="pb-nav-group-dropdown" [class.show]="openDropdown === 'Supply'">
+        <button class="pb-nav-tab" [class.active]="['BOM', 'Procurement'].includes(activeTab)" (click)="toggleDropdown('Supply', $event)">
+          <lucide-icon [img]="Box" [size]="16"></lucide-icon> Supply <lucide-icon [img]="ChevronDown" [size]="14" class="ml-1 opacity-50"></lucide-icon>
+        </button>
+        <div class="pb-dropdown-menu">
+          <button [class.active]="activeTab === 'BOM'" (click)="switchTab('BOM')">Bill of Materials</button>
+          <button [class.active]="activeTab === 'Procurement'" (click)="switchTab('Procurement')">Procurement</button>
+        </div>
+      </div>
+
+      <div class="pb-nav-group-dropdown" [class.show]="openDropdown === 'Quality'">
+        <button class="pb-nav-tab" [class.active]="['Risks', 'Issues'].includes(activeTab)" (click)="toggleDropdown('Quality', $event)">
+          <lucide-icon [img]="ShieldAlert" [size]="16"></lucide-icon> Quality <lucide-icon [img]="ChevronDown" [size]="14" class="ml-1 opacity-50"></lucide-icon>
+        </button>
+        <div class="pb-dropdown-menu">
+          <button [class.active]="activeTab === 'Risks'" (click)="switchTab('Risks')">Risks</button>
+          <button [class.active]="activeTab === 'Issues'" (click)="switchTab('Issues')">Issues & Changes</button>
+        </div>
+      </div>
+
+      <div class="pb-nav-group-dropdown" [class.show]="openDropdown === 'Management'">
+        <button class="pb-nav-tab" [class.active]="['Financials', 'Reports'].includes(activeTab)" (click)="toggleDropdown('Management', $event)">
+          <lucide-icon [img]="PieChart" [size]="16"></lucide-icon> Management <lucide-icon [img]="ChevronDown" [size]="14" class="ml-1 opacity-50"></lucide-icon>
+        </button>
+        <div class="pb-dropdown-menu">
+          <button *ngIf="isManager || isUnitHead" [class.active]="activeTab === 'Financials'" (click)="switchTab('Financials')">Financials</button>
+          <button [class.active]="activeTab === 'Reports'" (click)="switchTab('Reports')">Reports</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="pb-main-content-fluid">
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PROJECT OVERVIEW TAB (NEW GRID LAYOUT)
+════════════════════════════════════════════════════════════════════════ -->
+
+<div class="overview-grid-container" *ngIf="activeTab === 'Overview'">
+  <div *ngIf="overviewLoading" class="overview-loading">
+    <div class="spinner"></div>
+    <p>Loading project control center...</p>
+  </div>
+
+  <ng-container *ngIf="!overviewLoading && overviewData">
+    <!-- ROW 1: 6 KPI Cards -->
+    <div class="kpi-grid-6">
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-blue-50 text-blue-600"><lucide-icon [img]="CheckSquare" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Total Tasks</span>
+          <span class="kpi-value">{{ overviewData.taskStats.totalTasks }}</span>
+        </div>
+      </div>
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-green-50 text-green-600"><lucide-icon [img]="CheckCircle" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Completed</span>
+          <span class="kpi-value">{{ overviewData.taskStats.completedTasks }}</span>
+        </div>
+      </div>
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-yellow-50 text-yellow-600"><lucide-icon [img]="Clock" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Pending</span>
+          <span class="kpi-value">{{ overviewData.taskStats.totalTasks - overviewData.taskStats.completedTasks }}</span>
+        </div>
+      </div>
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-red-50 text-red-600"><lucide-icon [img]="AlertTriangle" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Open Risks</span>
+          <span class="kpi-value">{{ overviewData.openRisksCount || 0 }}</span>
+        </div>
+      </div>
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-orange-50 text-orange-600"><lucide-icon [img]="AlertCircle" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Open Issues</span>
+          <span class="kpi-value">{{ overviewData.openIssuesCount || 0 }}</span>
+        </div>
+      </div>
+      <div class="dashboard-card kpi-card">
+        <div class="kpi-icon-box bg-purple-50 text-purple-600"><lucide-icon [img]="Users" [size]="18"></lucide-icon></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Team Members</span>
+          <span class="kpi-value">{{ overviewData.project.members.length || 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Progress, Health, Milestones -->
+    <div class="dashboard-grid-3">
+      <!-- Project Progress -->
+      <div class="dashboard-card flex flex-col h-full">
+        <h3 class="card-title-sm border-b">Project Progress</h3>
+        <div class="card-body-padded flex-center-col flex-1">
+          <div class="progress-circle" [style.--progress]="progressPercentage">
+            <span class="progress-text">{{ progressPercentage }}%</span>
+          </div>
+          <p class="text-sm text-gray-500 mt-4 text-center">Based on completed tasks</p>
+        </div>
+      </div>
+
+      <!-- Upcoming Milestones -->
+      <div class="dashboard-card flex flex-col h-full">
+        <div class="flex justify-between items-center border-b px-4 py-3">
+          <h3 class="card-title-sm m-0">Upcoming Milestones</h3>
+          <button class="text-xs text-red-600 font-medium hover:underline" (click)="switchTab('Milestones')">View All</button>
+        </div>
+        <div class="card-body-scrollable flex-1 flex flex-col justify-center">
+          <div class="empty-state-mini m-auto">
+            <lucide-icon [img]="Flag" [size]="24" class="text-gray-300"></lucide-icon>
+            <p>No upcoming milestones</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Action, Activity, Details -->
+    <div class="dashboard-grid-3">
+      <!-- Requires Action -->
+      <div class="dashboard-card flex flex-col h-full">
+        <h3 class="card-title-sm border-b">Requires Action</h3>
+        <div class="card-body-scrollable flex-1 flex flex-col">
+          <div class="action-list-sm">
+            <div class="action-item-sm warning" *ngIf="overviewData.taskStats.overdueTasks > 0">
+              <div class="icon-wrap"><lucide-icon [img]="Clock" [size]="14"></lucide-icon></div>
+              <div class="content-wrap">
+                <span class="title">{{ overviewData.taskStats.overdueTasks }} Overdue Tasks</span>
+                <button (click)="switchTab('Board')">View Tasks</button>
+              </div>
+            </div>
+            
+            <div class="action-item-sm info" *ngIf="!overviewData.project.leadId">
+              <div class="icon-wrap"><lucide-icon [img]="UserPlus" [size]="14"></lucide-icon></div>
+              <div class="content-wrap">
+                <span class="title">No Team Lead Assigned</span>
+              </div>
+            </div>
+
+            <div class="empty-state-mini m-auto" *ngIf="overviewData.taskStats.overdueTasks === 0 && overviewData.project.leadId">
+              <lucide-icon [img]="CheckCircle" [size]="24" class="text-green-400"></lucide-icon>
+              <p>All clear! No immediate actions required.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="dashboard-card flex flex-col h-full">
+        <h3 class="card-title-sm border-b">Recent Activity</h3>
+        <div class="card-body-scrollable flex-1 flex flex-col">
+          <div class="activity-feed-sm">
+            <div class="activity-item-sm" *ngFor="let act of recentActivities">
+              <div class="activity-bullet-sm"></div>
+              <div class="activity-content-sm">
+                <span class="desc"><strong>{{ act.userName }}</strong> {{ act.action }}</span>
+                <span class="time">{{ formatDate(act.timestamp) }}</span>
+              </div>
+            </div>
+            <div class="empty-state-mini m-auto" *ngIf="recentActivities.length === 0">
+              <lucide-icon [img]="Activity" [size]="24" class="text-gray-300"></lucide-icon>
+              <p>No recent activity</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Details -->
+      <div class="dashboard-card flex flex-col h-full proj-details-card">
+        <div class="card-header-styled flex justify-between items-center px-4 py-3 border-b">
+          <div class="flex items-center gap-2">
+            <div class="header-icon-badge blue">
+              <lucide-icon [img]="FileText" [size]="16"></lucide-icon>
+            </div>
+            <h3 class="card-title-styled">Project Details</h3>
+          </div>
+          <span class="status-pill-badge bg-blue-100 text-blue-800">
+            {{ project?.status || 'Active' }}
+          </span>
+        </div>
+        <div class="card-body-scrollable p-4 flex-1">
+          <div class="details-list-modern">
+            <!-- Manager -->
+            <div class="details-item-modern">
+              <div class="item-label">
+                <lucide-icon [img]="User" [size]="15" class="icon-maint blue"></lucide-icon>
+                <span>Manager</span>
+              </div>
+              <div class="item-value">
+                <div class="person-chip" *ngIf="project?.managerId?.employeeName; else noManager">
+                  <span class="avatar-initials blue">{{ getInitials(project?.managerId?.employeeName) }}</span>
+                  <span class="person-name">{{ project?.managerId?.employeeName }}</span>
+                </div>
+                <ng-template #noManager><span class="text-muted">—</span></ng-template>
+              </div>
+            </div>
+
+            <!-- Team Lead -->
+            <div class="details-item-modern">
+              <div class="item-label">
+                <lucide-icon [img]="UserPlus" [size]="15" class="icon-maint indigo"></lucide-icon>
+                <span>Team Lead</span>
+              </div>
+              <div class="item-value">
+                <div class="person-chip" *ngIf="project?.leadId?.employeeName; else noLead">
+                  <span class="avatar-initials indigo">{{ getInitials(project?.leadId?.employeeName) }}</span>
+                  <span class="person-name">{{ project?.leadId?.employeeName }}</span>
+                </div>
+                <ng-template #noLead><span class="text-muted">—</span></ng-template>
+              </div>
+            </div>
+
+            <!-- Vertical -->
+            <div class="details-item-modern">
+              <div class="item-label">
+                <lucide-icon [img]="Briefcase" [size]="15" class="icon-maint purple"></lucide-icon>
+                <span>Vertical</span>
+              </div>
+              <div class="item-value">
+                <span class="vertical-name-badge">{{ getVerticalName() }}</span>
+              </div>
+            </div>
+
+            <!-- Start Date -->
+            <div class="details-item-modern">
+              <div class="item-label">
+                <lucide-icon [img]="Calendar" [size]="15" class="icon-maint emerald"></lucide-icon>
+                <span>Start Date</span>
+              </div>
+              <div class="item-value font-semibold text-slate-700">
+                {{ formatDate(project?.startDate) || '—' }}
+              </div>
+            </div>
+
+            <!-- Target Date -->
+            <div class="details-item-modern">
+              <div class="item-label">
+                <lucide-icon [img]="Clock" [size]="15" class="icon-maint amber"></lucide-icon>
+                <span>Target Date</span>
+              </div>
+              <div class="item-value font-semibold text-slate-700">
+                {{ formatDate(project?.expectedEndDate) || '—' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BOARD TAB (previously Overview — Kanban Board)
+════════════════════════════════════════════════════════════════════════ -->
+  <div class="board-main-layout" style="display: flex; flex-direction: column; width: 100%;"
+    *ngIf="activeTab === 'Board'">
+
+    <!-- Kanban Filter Controls -->
+    <div class="filter-controls-row" style="padding: 1.25rem 2rem 0 2rem; width: 100%;">
+      <div class="filters-left">
+        <div class="search-input-wrapper">
+          <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+          <input type="text" placeholder="Search task..." [(ngModel)]="searchQuery" (ngModelChange)="filterAndOrganizeTasks()" class="form-control-search">
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedPriority" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Priority: All</option>
+            <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedStatus" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Status: All</option>
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper" *ngIf="project">
+          <select [(ngModel)]="selectedAssignee" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Assignee: All</option>
+            <option *ngIf="project.managerId" [value]="project.managerId._id || project.managerId">{{ project.managerId.employeeName || 'Manager' }} (Manager)</option>
+            <option *ngFor="let m of project.members" [value]="m._id">{{ m.employeeName }}</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedType" (change)="filterAndOrganizeTasks()" class="form-control-select">
+            <option value="">Type: All</option>
+            <option *ngFor="let t of taskTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <button class="btn-reset" (click)="resetFilters()" title="Reset Filters">
+          <lucide-icon [img]="RotateCcw" [size]="16"></lucide-icon>
+          <span>Reset</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- Kanban Board Container -->
+    <div class="board-container" cdkDropListGroup style="flex: 1; min-width: 0;">
+
+      <!-- 📝 TO DO Column -->
+      <div class="board-column border-todo">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-todo"></span>
+            <h3>📝 TO DO</h3>
+            <span class="task-count-badge">{{ todoTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="todoList" cdkDropList [cdkDropListData]="todoTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="todoTasks.length === 0">
+            <span class="empty-icon">📋</span>
+            <h4>No tasks in To Do</h4>
+            <p>Drag tasks here to start</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of todoTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🚀 IN PROGRESS Column -->
+      <div class="board-column border-inprogress">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-inprogress"></span>
+            <h3>🚀 IN PROGRESS</h3>
+            <span class="task-count-badge">{{ inProgressTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="inProgressList" cdkDropList [cdkDropListData]="inProgressTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="inProgressTasks.length === 0">
+            <span class="empty-icon">⚡</span>
+            <h4>No tasks in Progress</h4>
+            <p>Drag tasks here to update status</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of inProgressTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👀 REVIEW Column -->
+      <div class="board-column border-review">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-review"></span>
+            <h3>👀 REVIEW</h3>
+            <span class="task-count-badge">{{ reviewTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="reviewList" cdkDropList [cdkDropListData]="reviewTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="reviewTasks.length === 0">
+            <span class="empty-icon">🔍</span>
+            <h4>No tasks in Review</h4>
+            <p>Drag tasks here to check off quality</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of reviewTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ DONE Column -->
+      <div class="board-column border-done">
+        <div class="column-header">
+          <div class="header-title-wrapper">
+            <span class="indicator bg-done"></span>
+            <h3>✅ DONE</h3>
+            <span class="task-count-badge">{{ doneTasks.length }}</span>
+          </div>
+          <button class="btn-column-actions">
+            <lucide-icon [img]="MoreHorizontal" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="task-list" id="doneList" cdkDropList [cdkDropListData]="doneTasks"
+          (cdkDropListDropped)="drop($event)">
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="doneTasks.length === 0">
+            <span class="empty-icon">🎉</span>
+            <h4>No tasks in Done</h4>
+            <p>Complete tasks to see them here</p>
+          </div>
+
+          <!-- Task Card -->
+          <div class="task-card" *ngFor="let task of doneTasks" cdkDrag>
+            <div class="card-hover-actions">
+              <button (click)="editTask(task, $event)" title="Edit Task"><lucide-icon [img]="Edit"
+                  [size]="14"></lucide-icon></button>
+              <button (click)="viewDetails(task, $event)" title="View Details"><lucide-icon [img]="Eye"
+                  [size]="14"></lucide-icon></button>
+              <button *ngIf="isManager || task.reporterId?._id === currentUserId"
+                (click)="confirmDeleteTask(task, $event)" title="Delete Task" class="btn-delete"><lucide-icon
+                  [img]="Trash2" [size]="14"></lucide-icon></button>
+              <button title="More Options"><lucide-icon [img]="MoreHorizontal" [size]="14"></lucide-icon></button>
+            </div>
+
+            <div class="card-header">
+              <span class="task-id">{{ task.taskId }}</span>
+              <span class="priority-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span>
+            </div>
+
+            <h4 class="task-title">{{ task.summary }}</h4>
+            <p class="task-desc-truncated">{{ task.description || 'No description provided.' }}</p>
+
+            <div class="task-meta-badges">
+              <span class="meta-badge task-type">{{ task.type }}</span>
+              <span class="meta-badge task-module" *ngIf="task.module">{{ task.module }}</span>
+            </div>
+
+            <div class="card-footer">
+              <div class="assignee-info" *ngIf="task.assigneeId">
+                <div class="avatar-small">{{ getInitials(task.assigneeId.employeeName) }}</div>
+                <span class="assignee-name">{{ task.assigneeId.employeeName }}</span>
+              </div>
+              <div class="footer-metrics">
+                <span class="metric-item" *ngIf="task.dueDate">
+                  <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                  <span>{{ formatDate(task.dueDate) }}</span>
+                </span>
+                <span class="metric-item" title="Comments">
+                  <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                  <span>{{ task.commentCount }}</span>
+                </span>
+                <span class="metric-item" title="Attachments">
+                  <lucide-icon [img]="Paperclip" [size]="12"></lucide-icon>
+                  <span>{{ task.attachmentCount }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     RISKS TAB
+════════════════════════════════════════════════════════════════════════ -->
+<div class="risks-tab-content" *ngIf="activeTab === 'Risks'" style="padding: 1.5rem; background: #fafafa; border-radius: 12px;">
+  
+  <!-- Header Row -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Project Risks</h3>
+      <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;">Identify, assess probability & impact, and mitigate project risk factors.</p>
+    </div>
+    <button class="btn-primary" (click)="openAddRiskModal()" style="display: flex; align-items: center; gap: 0.5rem; background: var(--primary, #dc2626); color: white; border: none; padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(220,38,38,0.2);">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+      <span>Add Risk</span>
+    </button>
+  </div>
+
+  <div *ngIf="risksLoading" style="padding: 3rem; text-align: center; color: #64748b;">
+    <p>Loading risks...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!risksLoading && risks.length === 0" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🛡️</div>
+    <h4 style="font-size: 1.125rem; color: #0f172a; font-weight: 700; margin: 0 0 0.5rem 0;">No Risks Identified</h4>
+    <p style="color: #64748b; font-size: 0.875rem; max-width: 420px; margin: 0 auto 1.5rem auto;">Get started by identifying potential project risks to track mitigation plans.</p>
+    <button (click)="openAddRiskModal()" style="padding: 0.625rem 1.25rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #334155; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+      <span>Add First Risk</span>
+    </button>
+  </div>
+
+  <!-- Table View -->
+  <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" *ngIf="!risksLoading && risks.length > 0">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+      <thead>
+        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+          <th style="padding: 0.875rem 1.25rem;">Risk Title & Description</th>
+          <th style="padding: 0.875rem 1.25rem;">Probability</th>
+          <th style="padding: 0.875rem 1.25rem;">Impact</th>
+          <th style="padding: 0.875rem 1.25rem; text-align: center;">Severity</th>
+          <th style="padding: 0.875rem 1.25rem; text-align: center;">Status</th>
+          <th style="padding: 0.875rem 1.25rem;">Owner</th>
+          <th style="padding: 0.875rem 1.25rem; text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of risks" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+          <td style="padding: 1rem 1.25rem;">
+            <div style="font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">{{ r.title }}</div>
+            <div style="font-size: 0.8125rem; color: #64748b;" *ngIf="r.description">{{ r.description }}</div>
+          </td>
+          <td style="padding: 1rem 1.25rem; color: #334155; font-weight: 500;">{{ r.probability }}</td>
+          <td style="padding: 1rem 1.25rem; color: #334155; font-weight: 500;">{{ r.impact }}</td>
+          <td style="padding: 1rem 1.25rem; text-align: center;">
+            <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;"
+              [style.background]="r.severity === 'Critical' ? '#fef2f2' : r.severity === 'High' ? '#fff7ed' : '#eff6ff'"
+              [style.color]="r.severity === 'Critical' ? '#dc2626' : r.severity === 'High' ? '#c2410c' : '#2563eb'">
+              {{ r.severity }}
+            </span>
+          </td>
+          <td style="padding: 1rem 1.25rem; text-align: center;">
+            <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;"
+              [style.background]="r.status === 'Mitigated' || r.status === 'Closed' ? '#ecfdf5' : '#eff6ff'"
+              [style.color]="r.status === 'Mitigated' || r.status === 'Closed' ? '#047857' : '#1d4ed8'">
+              {{ r.status }}
+            </span>
+          </td>
+          <td style="padding: 1rem 1.25rem; color: #475569; font-weight: 500;">{{ getOwnerName(r.ownerId) }}</td>
+          <td style="padding: 1rem 1.25rem; text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button (click)="openEditRiskModal(r)" title="Edit" style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #475569;"><lucide-icon [img]="Edit" [size]="14"></lucide-icon></button>
+              <button (click)="confirmDeleteRisk(r)" title="Delete" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #ef4444;"><lucide-icon [img]="Trash2" [size]="14"></lucide-icon></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+       MILESTONES TAB
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="milestones-layout" *ngIf="activeTab === 'Milestones'" style="padding: 1.5rem; width: 100%;">
+    <!-- Top Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 style="font-size: 1.25rem; margin: 0; color: #0f172a; font-weight: 700;">Project Milestones</h3>
+        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;">Set key project targets, track progress %, and manage milestone owners.</p>
+      </div>
+      <button *ngIf="canManageMilestones()" class="btn-primary-custom" (click)="openAddMilestoneModal()" id="btn-add-milestone">
+        <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+        <span>Add Milestone</span>
+      </button>
+    </div>
+
+    <!-- Summary Cards Strip -->
+    <div class="milestone-summary-strip">
+      <div class="m-summary-card">
+        <span class="m-summary-num">{{ milestones.length }}</span>
+        <span class="m-summary-label">Total Milestones</span>
+      </div>
+      <div class="m-summary-card success">
+        <span class="m-summary-num">{{ getMilestoneCountByStatus('Completed') }}</span>
+        <span class="m-summary-label">Completed</span>
+      </div>
+      <div class="m-summary-card info">
+        <span class="m-summary-num">{{ getMilestoneCountByStatus('In Progress') }}</span>
+        <span class="m-summary-label">In Progress</span>
+      </div>
+      <div class="m-summary-card danger">
+        <span class="m-summary-num">{{ getMilestoneCountByStatus('Delayed') }}</span>
+        <span class="m-summary-label">Delayed</span>
+      </div>
+      <div class="m-summary-card neutral">
+        <span class="m-summary-num">{{ getMilestoneCountByStatus('Not Started') }}</span>
+        <span class="m-summary-label">Not Started</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="milestonesLoading" style="text-align: center; padding: 3rem 0; color: #64748b;">
+      <div class="loading-spinner" style="margin: 0 auto 1rem auto;"></div>
+      <p>Loading milestones...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!milestonesLoading && milestones.length === 0" style="text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">🏁</div>
+      <h4 style="font-size: 1.125rem; color: #0f172a; margin: 0 0 0.5rem 0; font-weight: 600;">No milestones yet</h4>
+      <p style="color: #64748b; font-size: 0.875rem; max-width: 420px; margin: 0 auto 1.5rem auto;">Create milestones to track high-level phases and key completion dates for this project.</p>
+      <button *ngIf="canManageMilestones()" class="btn-primary-custom" (click)="openAddMilestoneModal()">
+        <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+        <span>Create First Milestone</span>
+      </button>
+    </div>
+
+    <!-- Milestones Table -->
+    <div *ngIf="!milestonesLoading && milestones.length > 0" class="milestones-table-card">
+      <table class="m-table">
+        <thead>
+          <tr>
+            <th>Milestone Name</th>
+            <th>Owner</th>
+            <th>Planned Start</th>
+            <th>Planned End</th>
+            <th>Actual Completion</th>
+            <th style="width: 180px;">Progress</th>
+            <th>Status</th>
+            <th *ngIf="canManageMilestones()" style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of milestones">
+            <td>
+              <div class="m-name">{{ m.name }}</div>
+              <div class="m-desc" *ngIf="m.description">{{ m.description }}</div>
+            </td>
+            <td>
+              <div class="m-owner" *ngIf="m.ownerId">
+                <lucide-icon [img]="User" [size]="14"></lucide-icon>
+                <span>{{ getOwnerName(m.ownerId) }}</span>
+              </div>
+              <span *ngIf="!m.ownerId" style="color: #94a3b8; font-size: 0.8125rem;">Unassigned</span>
+            </td>
+            <td>{{ m.plannedStart | date:'mediumDate' }}</td>
+            <td>{{ m.plannedEnd | date:'mediumDate' }}</td>
+            <td>
+              <span *ngIf="m.actualEnd">{{ m.actualEnd | date:'mediumDate' }}</span>
+              <span *ngIf="!m.actualEnd" style="color: #94a3b8;">—</span>
+            </td>
+            <td>
+              <div class="m-progress-container">
+                <div class="m-progress-bar">
+                  <div class="m-progress-fill" [style.width.%]="m.progress" [class.is-complete]="m.progress === 100"></div>
+                </div>
+                <span class="m-progress-num">{{ m.progress }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="m-status-badge" [ngClass]="getMilestoneStatusClass(m.status)">
+                {{ m.status }}
+              </span>
+            </td>
+            <td *ngIf="canManageMilestones()" style="text-align: right;">
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="m-action-btn" (click)="openEditMilestoneModal(m)" title="Edit Milestone">
+                  <lucide-icon [img]="Edit" [size]="15"></lucide-icon>
+                </button>
+                <button class="m-action-btn danger" (click)="confirmDeleteMilestone(m)" title="Delete Milestone">
+                  <lucide-icon [img]="Trash2" [size]="15"></lucide-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modules & Story Tab -->
+  <div class="modules-layout" *ngIf="activeTab === 'Modules' || activeTab === 'Story'" style="padding: 1.5rem; width: 100%;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+      <h3 style="font-size: 1.25rem; margin: 0;">{{ activeTab === 'Story' ? 'Project Stories' : 'Project Modules' }}</h3>
+      <button class="btn-primary-custom" (click)="showModuleForm = true">
+        <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+        <span>{{ activeTab === 'Story' ? 'New Story' : 'Create Module' }}</span>
+      </button>
+    </div>
+
+    <!-- Modules Cards Grid -->
+    <div class="content-panel" style="background: transparent; box-shadow: none; padding: 0;">
+      <div class="cards-grid">
+        <div class="card module-card" *ngFor="let m of modules" (click)="openModule(m)">
+          <div class="card-header">
+            <div class="card-title-row">
+              <h3 class="card-title">{{ m.name }}</h3>
+              <span class="badge" [ngClass]="{
+                'badge-warning': m.status === 'Pending Approval',
+                'badge-success': m.status === 'Approved' || m.status === 'Completed',
+                'badge-danger': m.status === 'Rejected',
+                'badge-info': m.status === 'In Progress' || m.status === 'Draft'
+              }">{{ m.status }}</span>
+            </div>
+            <div *ngIf="m.status === 'Rejected'" style="font-size: 0.75rem; color: #ef4444; margin-top: 0.25rem;">{{
+              m.rejectionReason }}</div>
+          </div>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label">Created By:</span>
+              <span class="info-value">{{ m.createdBy?.employeeName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Due Date:</span>
+              <span class="info-value">{{ formatDate(m.dueDate) }}</span>
+            </div>
+            <div class="info-row progress-row">
+              <span class="info-label">Progress:</span>
+              <div class="progress-bar-container">
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="m.progress"></div>
+                </div>
+                <span class="progress-text">{{ m.progress }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer" (click)="$event.stopPropagation()">
+            <div *ngIf="m.status === 'Pending Approval' && (isLead || isManager)" class="action-buttons">
+              <button class="btn btn-sm btn-approve" (click)="approveModule(m, $event)">Approve</button>
+              <button class="btn btn-sm btn-reject" (click)="rejectModule(m, $event)">Reject</button>
+              <button *ngIf="isManager || isLead" class="btn-icon-delete" (click)="deleteModule(m, $event)" title="Delete Story">
+                <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+            <div *ngIf="!(m.status === 'Pending Approval' && (isLead || isManager))" class="action-buttons" style="display: flex; gap: 0.5rem; align-items: center; width: 100%; justify-content: space-between;">
+              <button class="btn btn-outline btn-sm" (click)="openModule(m)">View Details</button>
+              <button *ngIf="isManager || isLead" class="btn-icon-delete" (click)="deleteModule(m, $event)" title="Delete Story">
+                <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="modules.length === 0" style="margin-top: 2rem;">
+        <span class="empty-icon">📁</span>
+        <h4>{{ activeTab === 'Story' ? 'No stories found for this project' : 'No modules found' }}</h4>
+        <p>{{ activeTab === 'Story' ? 'Click + New Story to create a story for this project.' : 'Create a module to get started.' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Departments Tab -->
+  <div *ngIf="activeTab === 'Departments'" style="padding: 1.5rem; width: 100%;">
+    <!-- Toast messages -->
+    <div *ngIf="deptSuccess" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.35); color: #065f46; padding: 12px 18px; border-radius: 10px; margin-bottom: 16px; font-size: 0.875rem; font-weight: 500;">
+      ✓ {{ deptSuccess }}
+    </div>
+    <div *ngIf="deptError" style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #991b1b; padding: 12px 18px; border-radius: 10px; margin-bottom: 16px; font-size: 0.875rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+      {{ deptError }}
+      <button (click)="deptError = null" style="background: none; border: none; color: #991b1b; cursor: pointer; font-size: 1.1rem;">×</button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">Project Departments</h3>
+      <button *ngIf="isManager" class="btn-primary-custom" (click)="openAddDeptModal()" id="btn-add-dept-to-project">
+        <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+        Add Department
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="deptLoading" style="text-align: center; padding: 40px; color: #64748b;">Loading departments…</div>
+
+    <!-- Empty state -->
+    <div *ngIf="!deptLoading && projectDepartments.length === 0" style="text-align: center; padding: 60px 20px; color: #64748b;">
+      <div style="font-size: 3rem; margin-bottom: 12px;">🏢</div>
+      <h4 style="font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">No Departments Linked</h4>
+      <p style="font-size: 0.875rem;">Add departments to this project to track organizational context.</p>
+    </div>
+
+    <!-- Department cards -->
+    <div style="display: flex; flex-direction: column; gap: 14px;" *ngIf="!deptLoading && projectDepartments.length > 0">
+      <div *ngFor="let pd of projectDepartments" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(99,102,241,0.12); color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem;">
+              {{ pd.departmentId.departmentCode.slice(0,2) }}
+            </div>
+            <div>
+              <div style="font-size: 1rem; font-weight: 700; color: #0f172a;">{{ pd.departmentId.departmentName }}</div>
+              <div style="font-size: 0.78rem; color: #64748b;">{{ pd.departmentId.departmentCode }}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button *ngIf="isManager" (click)="removeDeptFromProject(pd.departmentId._id)"
+              style="width: 28px; height: 28px; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); color: #dc2626; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+              title="Remove department">
+              <lucide-icon [img]="Trash2" [size]="13"></lucide-icon>
+            </button>
+          </div>
+        </div>
+
+          <div style="font-size: 0.78rem; color: #64748b; margin-top: 6px;" *ngIf="pd.departmentId.verticalId">
+            Vertical: <strong>{{ $any(pd.departmentId.verticalId).name || pd.departmentId.verticalId }}</strong>
+          </div>
+
+          <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;" *ngIf="pd.departmentId.managerIds?.length">
+            Manager(s): <strong>{{ pd.departmentId.managerIds!.length }} assigned</strong>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MEMBERS TAB (RESOURCES -> MEMBERS)
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="members-layout" *ngIf="activeTab === 'Members'" style="padding: 1.5rem; width: 100%;">
+    <!-- Top Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 style="font-size: 1.25rem; margin: 0; color: #0f172a; font-weight: 700;">Project Members & Team</h3>
+        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;">Manage team members assigned to this project, view roles, departments, and verticals.</p>
+      </div>
+      <button *ngIf="isManager || isLead" class="btn-primary-custom" (click)="openAssignMemberModal()" id="btn-assign-member">
+        <lucide-icon [img]="UserPlus" [size]="18"></lucide-icon>
+        <span>Assign Member</span>
+      </button>
+    </div>
+
+    <!-- Feedback messages -->
+    <div *ngIf="assignMemberSuccess" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.35); color: #065f46; padding: 12px 18px; border-radius: 10px; margin-bottom: 16px; font-size: 0.875rem; font-weight: 500;">
+      ✓ {{ assignMemberSuccess }}
+    </div>
+
+    <!-- Summary Cards Strip -->
+    <div class="milestone-summary-strip" style="margin-bottom: 1.5rem;">
+      <div class="m-summary-card">
+        <span class="m-summary-num">{{ getProjectMembersList().length }}</span>
+        <span class="m-summary-label">Total Team Members</span>
+      </div>
+      <div class="m-summary-card info">
+        <span class="m-summary-num">{{ getUniqueDepartmentCount() }}</span>
+        <span class="m-summary-label">Departments Represented</span>
+      </div>
+      <div class="m-summary-card success">
+        <span class="m-summary-num">{{ getUniqueVerticalCount() }}</span>
+        <span class="m-summary-label">Verticals Represented</span>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="getProjectMembersList().length === 0" style="text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+      <h4 style="font-size: 1.125rem; color: #0f172a; margin: 0 0 0.5rem 0; font-weight: 600;">No members assigned yet</h4>
+      <p style="color: #64748b; font-size: 0.875rem; max-width: 420px; margin: 0 auto 1.5rem auto;">Assign team members to this project to grant access and track team contributions.</p>
+      <button *ngIf="isManager || isLead" class="btn-primary-custom" (click)="openAssignMemberModal()">
+        <lucide-icon [img]="UserPlus" [size]="18"></lucide-icon>
+        <span>Assign First Member</span>
+      </button>
+    </div>
+
+    <!-- Members Table Card -->
+    <div *ngIf="getProjectMembersList().length > 0" class="milestones-table-card">
+      <table class="m-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Vertical</th>
+            <th *ngIf="isManager" style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let member of getProjectMembersList()">
+            <td>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
+                  {{ getInitials(member.employeeName || member.name) }}
+                </div>
+                <div>
+                  <div class="m-name">{{ member.employeeName || member.name }}</div>
+                  <div class="m-desc" *ngIf="member.email">{{ member.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="m-status-badge" [ngClass]="getMemberRoleBadgeClass(member.role)">
+                {{ member.role || 'Member' }}
+              </span>
+            </td>
+            <td>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #334155;">
+                🏛 {{ getMemberDepartmentName(member) }}
+              </div>
+            </td>
+            <td>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: #166534;">
+                🌐 {{ getMemberVerticalName(member) }}
+              </div>
+            </td>
+            <td *ngIf="isManager" style="text-align: right;">
+              <button class="m-action-btn danger" (click)="removeMemberFromProject(member._id || member.id)" title="Remove Member">
+                <lucide-icon [img]="Trash2" [size]="15"></lucide-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Placeholder Tabs -->
+  <div *ngIf="activeTab === 'Reports' || activeTab === 'Settings'"
+    style="padding: 2rem; text-align: center; color: #6b7280;">
+    <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">{{ activeTab }}</h3>
+    <p>This section is under construction.</p>
+  </div>
+
+<!-- Assign Member to Project Modal -->
+<div *ngIf="showAssignMemberModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="closeAssignMemberModal()">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 520px; overflow: hidden;"
+    (click)="$event.stopPropagation()">
+    
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+      <div>
+        <h2 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Assign Team Member to Project</h2>
+        <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #64748b;">Select an employee to add to {{ project?.name }}</p>
+      </div>
+      <button (click)="closeAssignMemberModal()" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.4rem;">×</button>
+    </div>
+
+    <div style="padding: 20px 24px;">
+      <div *ngIf="assignMemberError" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 10px; font-size: 0.875rem; margin-bottom: 16px;">
+        {{ assignMemberError }}
+      </div>
+
+      <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 8px;">Select Employee *</label>
+      
+      <select [(ngModel)]="selectedUserIdToAssign" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 11px 14px; font-size: 0.875rem; color: #0f172a; background: #fff; outline: none; margin-bottom: 16px;" id="select-assign-member">
+        <option value="">Choose an employee...</option>
+        <option *ngFor="let u of assignableUsers" [value]="u.id || u._id">
+          {{ u.employeeName }} — {{ u.role }} | {{ getMemberDepartmentName(u) }} | {{ getMemberVerticalName(u) }}
+        </option>
+      </select>
+
+      <!-- Selected User Preview Details Card -->
+      <div *ngIf="getSelectedUserToAssign() as selUser" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+        <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-bottom: 8px;">{{ selUser.employeeName }}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;">
+          <div><span style="color: #64748b;">Role:</span> <strong style="color: #334155;">{{ selUser.role }}</strong></div>
+          <div><span style="color: #64748b;">Email:</span> <strong style="color: #334155;">{{ selUser.email }}</strong></div>
+          <div><span style="color: #64748b;">Department:</span> <strong style="color: #334155;">{{ getMemberDepartmentName(selUser) }}</strong></div>
+          <div><span style="color: #64748b;">Vertical:</span> <strong style="color: #334155;">{{ getMemberVerticalName(selUser) }}</strong></div>
+        </div>
+      </div>
+
+      <p *ngIf="assignableUsers.length === 0" style="color: #94a3b8; font-size: 0.82rem; margin-top: 8px;">
+        All active team members are already assigned to this project.
+      </p>
+    </div>
+
+    <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn btn-outline" (click)="closeAssignMemberModal()">Cancel</button>
+      <button class="btn-primary-custom" [disabled]="!selectedUserIdToAssign || isAssigningMember" (click)="submitAssignMember()">
+        <span>{{ isAssigningMember ? 'Assigning...' : 'Assign Member' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Department to Project Modal -->
+<div *ngIf="showAddDeptModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="closeAddDeptModal()">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 440px;"
+    (click)="$event.stopPropagation()">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+      <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">Add Department to Project</h2>
+      <button (click)="closeAddDeptModal()" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.4rem;">×</button>
+    </div>
+    <div style="padding: 20px 24px;">
+      <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 8px;">Select Department</label>
+      <select [(ngModel)]="selectedDeptId" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; background: #fff; outline: none;" id="dept-select-modal">
+        <option value="">Choose a department…</option>
+        <option *ngFor="let d of allDepartments" [value]="d._id">{{ d.departmentName }} ({{ d.departmentCode }})</option>
+      </select>
+      <p *ngIf="allDepartments.length === 0" style="color: #94a3b8; font-size: 0.82rem; margin-top: 8px;">All available departments are already linked to this project.</p>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid #e2e8f0;">
+      <button (click)="closeAddDeptModal()" style="padding: 9px 20px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button (click)="addDepartmentToProject()" [disabled]="!selectedDeptId" id="btn-confirm-add-dept"
+        style="padding: 9px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer;"
+        [style.opacity]="!selectedDeptId ? 0.55 : 1">Add Department</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Form Overlay Modal -->
+<app-task-form *ngIf="showTaskForm" [task]="selectedTaskToEdit" [preselectedProjectId]="projectId"
+  (close)="closeTaskForm()" (save)="onTaskSaved()">
+</app-task-form>
+
+<!-- Module Form Overlay Modal -->
+<app-module-form *ngIf="showModuleForm" [projectId]="projectId" (close)="closeModuleForm()" (save)="onModuleSaved()">
+</app-module-form>
+
+<!-- ── Delete Confirmation Modal ─────────────────────────────────────────── -->
+<div class="modal-backdrop" *ngIf="showDeleteModal" (click)="cancelDelete()">
+  <div class="modal-dialog" style="max-width: 400px; padding: 2rem; text-align: center;"
+    (click)="$event.stopPropagation()">
+    <div style="color: #ef4444; margin-bottom: 1rem;">
+      <lucide-icon [img]="Trash2" [size]="48"></lucide-icon>
+    </div>
+    <h2 style="margin-bottom: 1rem; color: #111827;">{{ deleteTitle }}</h2>
+    <p style="color: #4b5563; margin-bottom: 1.5rem; white-space: pre-line;">{{ deleteMessage }}</p>
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+      <button class="btn btn-outline" (click)="cancelDelete()">Cancel</button>
+      <button class="btn btn-primary" style="background: #ef4444; border-color: #ef4444;"
+        (click)="executeDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Milestone Form Modal ──────────────────────────────────────────────── -->
+<div *ngIf="showMilestoneModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="closeMilestoneModal()">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;"
+    (click)="$event.stopPropagation()">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+      <h2 style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0;">{{ editingMilestone ? 'Edit Milestone' : 'Add New Milestone' }}</h2>
+      <button (click)="closeMilestoneModal()" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.4rem;">×</button>
+    </div>
+    <form (ngSubmit)="saveMilestone()">
+      <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div *ngIf="milestoneError" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 10px; font-size: 0.875rem;">
+          {{ milestoneError }}
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Milestone Name <span style="color: #ef4444;">*</span></label>
+          <input type="text" [(ngModel)]="milestoneForm.name" name="name" required placeholder="e.g. Design Sign-off & Architecture Freeze" id="m-input-name"
+            style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; outline: none;" />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Description</label>
+          <textarea [(ngModel)]="milestoneForm.description" name="description" rows="3" placeholder="Key deliverables or target requirements..." id="m-input-desc"
+            style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; outline: none; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Planned Start Date <span style="color: #ef4444;">*</span></label>
+            <input type="date" [(ngModel)]="milestoneForm.plannedStart" name="plannedStart" required id="m-input-start"
+              style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; outline: none;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Planned End Date <span style="color: #ef4444;">*</span></label>
+            <input type="date" [(ngModel)]="milestoneForm.plannedEnd" name="plannedEnd" required id="m-input-end"
+              style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; outline: none;" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Milestone Owner</label>
+            <select [(ngModel)]="milestoneForm.ownerId" name="ownerId" id="m-select-owner"
+              style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; background: #fff; outline: none;">
+              <option value="">Select Owner</option>
+              <option *ngFor="let user of userList" [value]="user.id || user._id">
+                {{ user.employeeName }} ({{ user.department || user.role }})
+              </option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Status</label>
+            <select [(ngModel)]="milestoneForm.status" name="status" (ngModelChange)="onMilestoneStatusChange($event)" id="m-select-status"
+              style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; background: #fff; outline: none;">
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Delayed">Delayed</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="font-size: 0.82rem; font-weight: 600; color: #475569; margin: 0;">Progress %</label>
+              <span style="font-size: 0.82rem; font-weight: 700; color: #6366f1;">{{ milestoneForm.progress }}%</span>
+            </div>
+            <input type="range" min="0" max="100" step="5" [(ngModel)]="milestoneForm.progress" name="progress" (ngModelChange)="onMilestoneProgressChange($event)" id="m-input-progress"
+              style="width: 100%; accent-color: #6366f1; cursor: pointer;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Actual Completion Date</label>
+            <input type="date" [(ngModel)]="milestoneForm.actualEnd" name="actualEnd" [disabled]="milestoneForm.status !== 'Completed'" id="m-input-actual"
+              style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; color: #0f172a; outline: none; background: #fff;"
+              [style.opacity]="milestoneForm.status !== 'Completed' ? 0.5 : 1" />
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+        <button type="button" (click)="closeMilestoneModal()" style="padding: 9px 20px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" [disabled]="isSavingMilestone" id="btn-save-milestone"
+          style="padding: 9px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer;"
+          [style.opacity]="isSavingMilestone ? 0.6 : 1">
+          {{ isSavingMilestone ? 'Saving...' : (editingMilestone ? 'Update Milestone' : 'Create Milestone') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Milestone Delete Confirmation Modal ───────────────────────────────── -->
+<div *ngIf="showDeleteMilestoneModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="showDeleteMilestoneModal = false">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 420px; padding: 24px; text-align: center;"
+    (click)="$event.stopPropagation()">
+    <div style="color: #ef4444; font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+    <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 1.125rem; font-weight: 700;">Delete Milestone</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 20px 0;">Are you sure you want to delete <strong>"{{ milestoneToDelete?.name }}"</strong>? This action cannot be undone.</p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button (click)="showDeleteMilestoneModal = false" style="padding: 9px 20px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button (click)="executeDeleteMilestone()" id="btn-confirm-delete-milestone" style="padding: 9px 20px; border-radius: 10px; border: none; background: #ef4444; color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Delete Milestone</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Risk Form Modal ─────────────────────────────────────────────────────── -->
+<div *ngIf="showRiskModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="closeRiskModal()">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 32px;"
+    (click)="$event.stopPropagation()">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h2 style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0;">{{ editingRisk ? 'Edit Risk' : 'Add New Risk' }}</h2>
+      <button (click)="closeRiskModal()" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.4rem;">×</button>
+    </div>
+    
+    <form (ngSubmit)="saveRisk()">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div *ngIf="riskError" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 10px; font-size: 0.875rem;">
+          {{ riskError }}
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Risk Title <span style="color: #ef4444;">*</span></label>
+          <input type="text" [(ngModel)]="riskForm.title" name="title" required placeholder="e.g. Vendor delay on critical component" id="r-input-title"
+            style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;" />
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Description</label>
+          <textarea [(ngModel)]="riskForm.description" name="description" rows="3" placeholder="Provide details about the risk..." id="r-input-desc"
+            style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a; resize: vertical; font-family: inherit;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Probability</label>
+            <select [(ngModel)]="riskForm.probability" name="probability" id="r-select-prob"
+              style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Impact</label>
+            <select [(ngModel)]="riskForm.impact" name="impact" id="r-select-impact"
+              style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Severity</label>
+            <select [(ngModel)]="riskForm.severity" name="severity" id="r-select-sev"
+              style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Status</label>
+            <select [(ngModel)]="riskForm.status" name="status" id="r-select-status"
+              style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;">
+              <option value="Identified">Identified</option>
+              <option value="Open">Open</option>
+              <option value="Mitigated">Mitigated</option>
+              <option value="Closed">Closed</option>
+              <option value="Realized">Realized</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Mitigation Plan</label>
+          <textarea [(ngModel)]="riskForm.mitigationPlan" name="mitigationPlan" rows="3" placeholder="How do we mitigate this?" id="r-input-mit"
+            style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a; resize: vertical; font-family: inherit;"></textarea>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Risk Owner</label>
+          <select [(ngModel)]="riskForm.ownerId" name="ownerId" id="r-select-owner"
+            style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.875rem; color: #0f172a;">
+            <option value="">-- Unassigned --</option>
+            <option *ngFor="let u of userList" [value]="u._id">{{ u.employeeName }}</option>
+          </select>
+        </div>
+
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
+        <button type="button" (click)="closeRiskModal()" style="padding: 9px 20px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" [disabled]="isSavingRisk" id="btn-save-risk"
+          style="padding: 9px 24px; border-radius: 10px; border: none; background: #3b82f6; color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+          [style.opacity]="isSavingRisk ? 0.6 : 1">
+          {{ isSavingRisk ? 'Saving...' : (editingRisk ? 'Update Risk' : 'Create Risk') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Risk Delete Confirmation Modal ──────────────────────────────────────── -->
+<div *ngIf="showDeleteRiskModal"
+  style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px;"
+  (click)="showDeleteRiskModal = false">
+  <div style="background: #fff; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 420px; padding: 24px; text-align: center;"
+    (click)="$event.stopPropagation()">
+    <div style="color: #ef4444; font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+    <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 1.125rem; font-weight: 700;">Delete Risk</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 20px 0;">Are you sure you want to delete <strong>"{{ riskToDelete?.title }}"</strong>? This action cannot be undone.</p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button (click)="showDeleteRiskModal = false" style="padding: 9px 20px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button (click)="executeDeleteRisk()" id="btn-confirm-delete-risk" style="padding: 9px 20px; border-radius: 10px; border: none; background: #ef4444; color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer;">Delete Risk</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     TIMELINE / GANTT TAB
+════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================
+     ISSUES & CHANGES TAB
+========================================================================== -->
+<div class="issues-tab-content" *ngIf="activeTab === 'Issues'">
+  <div class="tab-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    
+    <!-- Filter Toggle -->
+    <div class="filter-toggle-group" style="display: flex; background: #f3f4f6; padding: 4px; border-radius: 8px;">
+      <button class="toggle-btn" 
+        [class.active]="issueTabFilter === 'All'" 
+        (click)="setIssueTabFilter('All')"
+        style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.875rem; background: transparent; color: #4b5563;">
+        All
+      </button>
+      <button class="toggle-btn" 
+        [class.active]="issueTabFilter === 'Issue'" 
+        (click)="setIssueTabFilter('Issue')"
+        style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.875rem; background: transparent; color: #4b5563;">
+        Issues
+      </button>
+      <button class="toggle-btn" 
+        [class.active]="issueTabFilter === 'Change Request'" 
+        (click)="setIssueTabFilter('Change Request')"
+        style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.875rem; background: transparent; color: #4b5563;">
+        Change Requests
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 0.75rem;">
+      <button class="btn-primary" (click)="openAddIssueModal()">
+        <lucide-icon [name]="Plus" [size]="16" style="margin-right: 0.5rem;"></lucide-icon>
+        New Issue
+      </button>
+      <button class="btn-primary" (click)="openAddCrModal()">
+        <lucide-icon [name]="Plus" [size]="16" style="margin-right: 0.5rem;"></lucide-icon>
+        New Change Request
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="issuesLoading" class="loading-state" style="padding: 3rem; text-align: center; color: #6b7280;">
+    <div class="spinner" style="margin: 0 auto 1rem auto; width: 32px; height: 32px; border: 3px solid #f3f4f6; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    Loading Issues & Change Requests...
+  </div>
+
+  <div *ngIf="!issuesLoading && combinedIssuesAndCRs.length === 0" class="empty-state-large" style="text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; border: 1px dashed #e5e7eb;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+    <h3 style="font-size: 1.25rem; color: #111827; font-weight: 600; margin-bottom: 0.5rem;">No Issues or Changes Found</h3>
+    <p style="color: #6b7280; margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+      There are currently no items matching your filter. Create a new issue or change request to track them here.
+    </p>
+  </div>
+
+  <div class="table-container" *ngIf="!issuesLoading && combinedIssuesAndCRs.length > 0" style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden;">
+    <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+        <tr>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">ID</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Type</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Title</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Priority</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Status</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;">Owner</th>
+          <th style="padding: 1rem; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of combinedIssuesAndCRs" style="border-bottom: 1px solid #e5e7eb; transition: background 0.2s;">
+          <td style="padding: 1rem; font-weight: 500; color: #111827;">{{ item.displayId }}</td>
+          <td style="padding: 1rem;">
+            <span [class]="item.itemType === 'Issue' ? 'badge-type-issue' : 'badge-type-cr'">
+              {{ item.itemType }}
+            </span>
+          </td>
+          <td style="padding: 1rem;">
+            <div style="font-weight: 500; color: #111827; margin-bottom: 0.25rem;">{{ item.title }}</div>
+            <div style="font-size: 0.875rem; color: #6b7280; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-width: 300px;">
+              {{ item.description || 'No description' }}
+            </div>
+          </td>
+          <td style="padding: 1rem;">
+            <span class="status-badge" [ngClass]="getIssuePriorityClass(item.priority)">{{ item.priority }}</span>
+          </td>
+          <td style="padding: 1rem;">
+            <span class="status-badge" [ngClass]="getIssueStatusClass(item.status)">{{ item.status }}</span>
+          </td>
+          <td style="padding: 1rem;">
+            <div *ngIf="item.ownerId" style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="user-avatar-small" style="width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: #4b5563;">
+                {{ item.ownerId.employeeName?.charAt(0) || 'U' }}
+              </div>
+              <span style="font-size: 0.875rem; color: #374151;">{{ item.ownerId.employeeName }}</span>
+            </div>
+            <span *ngIf="!item.ownerId" style="font-size: 0.875rem; color: #9ca3af; font-style: italic;">Unassigned</span>
+          </td>
+          <td style="padding: 1rem; text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="action-btn" (click)="item.itemType === 'Issue' ? openEditIssueModal(item) : openEditCrModal(item)" title="Edit"
+                style="padding: 0.375rem; border-radius: 6px; border: 1px solid #e5e7eb; background: white; color: #4b5563; cursor: pointer; transition: all 0.2s;">
+                <lucide-icon [name]="Edit" [size]="14"></lucide-icon>
+              </button>
+              <button class="action-btn delete-btn" (click)="item.itemType === 'Issue' ? confirmDeleteIssue(item) : confirmDeleteCr(item)" title="Delete"
+                style="padding: 0.375rem; border-radius: 6px; border: 1px solid #fee2e2; background: #fef2f2; color: #dc2626; cursor: pointer; transition: all 0.2s;">
+                <lucide-icon [name]="Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- =========================================================================
+     ISSUE MODAL
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showIssueModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 600px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #111827;">{{ editingIssue ? 'Edit Issue' : 'New Issue' }}</h2>
+      <button (click)="closeIssueModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; padding: 0.25rem;">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding: 1.5rem; overflow-y: auto;">
+      <div *ngIf="issueError" class="alert-error" style="background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+        {{ issueError }}
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Title <span style="color: #dc2626;">*</span></label>
+        <input type="text" [(ngModel)]="issueForm.title" placeholder="e.g. Server unreachable" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Description</label>
+        <textarea [(ngModel)]="issueForm.description" rows="3" placeholder="Describe the issue..." style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Priority</label>
+          <select [(ngModel)]="issueForm.priority" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Status</label>
+          <select [(ngModel)]="issueForm.status" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Resolution Plan / Details</label>
+        <textarea [(ngModel)]="issueForm.resolution" rows="3" placeholder="How is this being resolved?" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; resize: vertical;"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+      <button class="btn-secondary" (click)="closeIssueModal()" [disabled]="isSavingIssue" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Cancel</button>
+      <button class="btn-primary" (click)="saveIssue()" [disabled]="isSavingIssue" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: var(--primary); color: white; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <span *ngIf="isSavingIssue" class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span>
+        {{ editingIssue ? 'Save Changes' : 'Create Issue' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     DELETE ISSUE MODAL
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showDeleteIssueModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+    <div style="padding: 1.5rem;">
+      <div style="display: flex; align-items: center; margin-bottom: 1rem; color: #dc2626;">
+        <lucide-icon [name]="AlertTriangle" [size]="24" style="margin-right: 0.75rem;"></lucide-icon>
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Delete Issue</h2>
+      </div>
+      <p style="color: #4b5563; font-size: 0.875rem; margin-bottom: 1.5rem; line-height: 1.5;">
+        Are you sure you want to delete issue <strong>"{{ issueToDelete?.title }}"</strong>? This action cannot be undone.
+      </p>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn-secondary" (click)="showDeleteIssueModal = false" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Cancel</button>
+        <button class="btn-danger" (click)="executeDeleteIssue()" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: #dc2626; color: white; font-weight: 500; cursor: pointer;">Delete Issue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     CHANGE REQUEST MODAL
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showCrModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 600px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #111827;">{{ editingCr ? 'Edit Change Request' : 'New Change Request' }}</h2>
+      <button (click)="closeCrModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; padding: 0.25rem;">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding: 1.5rem; overflow-y: auto;">
+      <div *ngIf="crError" class="alert-error" style="background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+        {{ crError }}
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Title <span style="color: #dc2626;">*</span></label>
+        <input type="text" [(ngModel)]="crForm.title" placeholder="e.g. Additional safety scanner" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Reason for Change</label>
+        <textarea [(ngModel)]="crForm.reason" rows="2" placeholder="Why is this change requested?" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; resize: vertical;"></textarea>
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Detailed Description</label>
+        <textarea [(ngModel)]="crForm.description" rows="2" placeholder="Provide details..." style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Priority</label>
+          <select [(ngModel)]="crForm.priority" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Approval Status</label>
+          <select [(ngModel)]="crForm.approvalStatus" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Implementation Status</label>
+          <select [(ngModel)]="crForm.status" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+            <option value="Open">Open</option>
+            <option value="In Review">In Review</option>
+            <option value="Approved">Approved</option>
+            <option value="Implementing">Implementing</option>
+            <option value="Completed">Completed</option>
+            <option value="Closed">Closed</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Scope Impact</label>
+          <input type="text" [(ngModel)]="crForm.scopeImpact" placeholder="e.g. Added scanner" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Cost Impact</label>
+          <input type="text" [(ngModel)]="crForm.costImpact" placeholder="e.g. +₹2000" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Schedule Impact</label>
+          <input type="text" [(ngModel)]="crForm.scheduleImpact" placeholder="e.g. +2 weeks" style="width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+      <button class="btn-secondary" (click)="closeCrModal()" [disabled]="isSavingCr" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Cancel</button>
+      <button class="btn-primary" (click)="saveCr()" [disabled]="isSavingCr" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: var(--primary); color: white; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <span *ngIf="isSavingCr" class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span>
+        {{ editingCr ? 'Save Changes' : 'Create Change Request' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     DELETE CHANGE REQUEST MODAL
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showDeleteCrModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+    <div style="padding: 1.5rem;">
+      <div style="display: flex; align-items: center; margin-bottom: 1rem; color: #dc2626;">
+        <lucide-icon [name]="AlertTriangle" [size]="24" style="margin-right: 0.75rem;"></lucide-icon>
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Delete Change Request</h2>
+      </div>
+      <p style="color: #4b5563; font-size: 0.875rem; margin-bottom: 1.5rem; line-height: 1.5;">
+        Are you sure you want to delete change request <strong>"{{ crToDelete?.title }}"</strong>? This action cannot be undone.
+      </p>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn-secondary" (click)="showDeleteCrModal = false" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Cancel</button>
+        <button class="btn-danger" (click)="executeDeleteCr()" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: #dc2626; color: white; font-weight: 500; cursor: pointer;">Delete CR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     BOM TAB
+========================================================================== -->
+<div class="bom-tab-content" *ngIf="activeTab === 'BOM'">
+
+  <!-- IF NO BOM SELECTED: SHOW BOM LIST -->
+  <div *ngIf="!activeBom">
+    <div class="tab-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin: 0;">Bill of Materials</h2>
+      <button class="btn-primary" (click)="openAddBomModal()" *ngIf="isManager || isUnitHead">
+        <lucide-icon [img]="Plus" [size]="16"></lucide-icon> New BOM
+      </button>
+    </div>
+
+    <div *ngIf="bomsLoading" class="loading-state">Loading BOMs...</div>
+    <div *ngIf="!bomsLoading && boms.length === 0" class="empty-state">
+      <span class="empty-icon">📦</span>
+      <h4>No BOMs</h4>
+      <p>Create a Bill of Materials for this project.</p>
+    </div>
+
+    <div class="list-container" *ngIf="!bomsLoading && boms.length > 0" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 1rem;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap;">BOM Number</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap;">Title / Assembly</th>
+            <th style="padding: 0.875rem 1rem; white-space: nowrap; text-align: center;">Revision</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap;">Released By</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap;">Release Date</th>
+            <th style="padding: 0.875rem 1rem; white-space: nowrap; text-align: center;">Status</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap;">Vendor</th>
+            <th style="padding: 0.875rem 1rem; white-space: nowrap; text-align: center;">Delivery</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap; text-align: right;">Est. Cost</th>
+            <th style="padding: 0.875rem 1.25rem; white-space: nowrap; text-align: right;">Act. Cost</th>
+          </tr>
+        </thead>
+        <tbody style="divide-y: 1px solid #f1f5f9;">
+          <tr *ngFor="let bom of boms" (click)="selectBom(bom)" style="cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+            <td style="padding: 1rem 1.25rem; font-weight: 600; color: #2563eb; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">{{ bom.bomNumber }}</td>
+            <td style="padding: 1rem 1.25rem; font-weight: 500; color: #1e293b; border-bottom: 1px solid #f1f5f9;">{{ bom.titleAssembly || bom.name }}</td>
+            <td style="padding: 1rem 1rem; text-align: center; border-bottom: 1px solid #f1f5f9;"><span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; border: 1px solid #cbd5e1;">{{ bom.revision || bom.currentRevisionId?.revisionNumber || 'A' }}</span></td>
+            <td style="padding: 1rem 1.25rem; color: #475569; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">{{ bom.releasedBy || bom.ownerId?.employeeName || '-' }}</td>
+            <td style="padding: 1rem 1.25rem; color: #64748b; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">{{ bom.releaseDate ? (bom.releaseDate | date:'mediumDate') : (bom.createdAt | date:'mediumDate') }}</td>
+            <td style="padding: 1rem 1rem; text-align: center; border-bottom: 1px solid #f1f5f9;">
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #eff6ff; color: #1d4ed8;" *ngIf="bom.status === 'Draft'">Draft</span>
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #ecfdf5; color: #047857;" *ngIf="bom.status === 'Released'">Released</span>
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #fff7ed; color: #c2410c;" *ngIf="bom.status === 'On Hold' || bom.status === 'Pending'">{{ bom.status }}</span>
+            </td>
+            <td style="padding: 1rem 1.25rem; color: #475569; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">{{ bom.vendorSupplier || '-' }}</td>
+            <td style="padding: 1rem 1rem; text-align: center; border-bottom: 1px solid #f1f5f9;">
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;" [ngStyle]="{
+                'background': bom.deliveryStatus === 'Delivered' ? '#ecfdf5' : bom.deliveryStatus === 'Partially Delivered' ? '#fff7ed' : '#f1f5f9',
+                'color': bom.deliveryStatus === 'Delivered' ? '#047857' : bom.deliveryStatus === 'Partially Delivered' ? '#c2410c' : '#475569'
+              }">{{ bom.deliveryStatus || 'Pending' }}</span>
+            </td>
+            <td style="padding: 1rem 1.25rem; font-weight: 500; color: #334155; text-align: right; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">₹{{ bom.estimatedCost | number:'1.0-2' }}</td>
+            <td style="padding: 1rem 1.25rem; font-weight: 600; color: #059669; text-align: right; white-space: nowrap; border-bottom: 1px solid #f1f5f9;">₹{{ bom.actualCost | number:'1.0-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- IF BOM SELECTED: SHOW REVISIONS AND ITEMS -->
+  <div *ngIf="activeBom">
+    <div class="tab-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="btn-secondary" (click)="backToBomList()" style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: white;">
+          <lucide-icon [img]="ArrowLeft" [size]="16"></lucide-icon>
+        </button>
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin: 0;">{{ activeBom.bomNumber }} - {{ activeBom.titleAssembly || activeBom.name }}</h2>
+          <p style="font-size: 0.875rem; color: #64748b; margin: 0;">Revision: {{ activeBom.revision || 'A' }} | Released By: {{ activeBom.releasedBy || 'N/A' }} | Status: {{ activeBom.status }}</p>
+        </div>
+      </div>
+      <button class="btn-secondary" (click)="openAddRevisionModal()" *ngIf="isManager || isUnitHead">
+        <lucide-icon [img]="Copy" [size]="16"></lucide-icon> Create Revision
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 1.5rem;">
+      
+      <!-- Revisions Sidebar -->
+      <div style="width: 250px; flex-shrink: 0;">
+        <h3 style="font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase">Revisions</h3>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <div *ngFor="let rev of revisions" 
+               (click)="selectRevision(rev)"
+               [style.background]="activeRevision?._id === rev._id ? '#fee2e2' : 'white'"
+               [style.border-color]="activeRevision?._id === rev._id ? 'var(--primary)' : '#e2e8f0'"
+               style="padding: 12px; border-radius: 8px; border: 1px solid; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="color: #1e293b;">{{ rev.revisionNumber }}</strong>
+              <span class="badge-status-mitigated" *ngIf="rev.status === 'Released'" style="font-size: 0.65rem;">Released</span>
+              <span class="badge-status-identified" *ngIf="rev.status === 'Draft'" style="font-size: 0.65rem;">Draft</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b;">{{ rev.createdAt | date:'shortDate' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Section -->
+      <div style="flex: 1; min-width: 0;">
+        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin: 0;">BOM Line Items</h3>
+            <button class="btn-primary" (click)="openAddBomItemModal()" *ngIf="activeRevision && activeRevision.status === 'Draft' && (isManager || isUnitHead)">
+              <lucide-icon [img]="Plus" [size]="16"></lucide-icon> Add Item
+            </button>
+          </div>
+
+          <div *ngIf="activeRevision && activeRevision.status === 'Released'" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 12px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem;">
+            This revision is Released and cannot be edited.
+          </div>
+
+          <div *ngIf="bomItemsLoading" class="loading-state">Loading line items...</div>
+          <div *ngIf="!bomItemsLoading && bomItems.length === 0" class="empty-state">
+            <p>No line items in this revision yet.</p>
+          </div>
+
+          <div style="overflow-x: auto;" *ngIf="!bomItemsLoading && bomItems.length > 0">
+            <table class="rflow-table">
+              <thead>
+                <tr>
+                  <th>Part No.</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Make</th>
+                  <th>Qty</th>
+                  <th>Ordered</th>
+                  <th>Received</th>
+                  <th>Unit Cost</th>
+                  <th>Total Cost</th>
+                  <th>Delivery</th>
+                  <th *ngIf="activeRevision?.status === 'Draft' && (isManager || isUnitHead)">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of bomItems">
+                  <td style="font-weight: 500">{{ item.partNumber }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ item.category || '-' }}</td>
+                  <td>{{ item.make || '-' }}</td>
+                  <td>{{ item.quantity }} {{ item.unit }}</td>
+                  <td>{{ materialStatus.ordered[item._id] || 0 }}</td>
+                  <td>{{ materialStatus.received[item._id] || 0 }}</td>
+                  <td>₹{{ item.unitCost | number:'1.2-2' }}</td>
+                  <td style="font-weight: 600">₹{{ item.totalCost | number:'1.2-2' }}</td>
+                  <td>
+                    <span class="badge-status-identified" *ngIf="item.deliveryStatus === 'Pending'">Pending</span>
+                    <span class="badge-status-mitigated" *ngIf="item.deliveryStatus === 'Delivered'">Delivered</span>
+                    <span class="badge-priority-medium" *ngIf="item.deliveryStatus === 'Ordered' || item.deliveryStatus === 'Partially Delivered'">{{item.deliveryStatus}}</span>
+                  </td>
+                  <td *ngIf="activeRevision?.status === 'Draft' && (isManager || isUnitHead)">
+                    <div style="display: flex; gap: 4px;">
+                      <button (click)="openEditBomItemModal(item)" style="background: transparent; border: none; cursor: pointer; color: #64748b;"><lucide-icon [img]="Edit" [size]="14"></lucide-icon></button>
+                      <button (click)="confirmDeleteBomItem(item)" style="background: transparent; border: none; cursor: pointer; color: #ef4444;"><lucide-icon [img]="Trash2" [size]="14"></lucide-icon></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     NEW / EDIT BOM MODAL (Matching Reference UI)
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showBomModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 650px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; display: flex; flex-direction: column;">
+    
+    <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #111827;">Add Bill of Materials</h2>
+      <button (click)="closeBomModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; padding: 0.25rem;">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem;">
+      <div *ngIf="bomError" class="alert-error" style="background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.875rem;">
+        {{ bomError }}
+      </div>
+
+      <!-- SECTION 1: RELEASE DETAILS -->
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.875rem;">
+          RELEASE DETAILS
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">BOM NUMBER</label>
+            <input type="text" [(ngModel)]="bomForm.bomNumber" placeholder="BOM-2026-001" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">REVISION</label>
+            <input type="text" [(ngModel)]="bomForm.revision" placeholder="A" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">TITLE / ASSEMBLY <span style="color: #dc2626;">*</span></label>
+          <input type="text" [(ngModel)]="bomForm.titleAssembly" placeholder="e.g., Conveyor drive assembly" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">LINKED PROJECT</label>
+            <input type="text" [value]="project?.name || 'Current Project'" readonly style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #e5e7eb; background: #f9fafb; border-radius: 6px; font-size: 0.875rem; color: #6b7280;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">RELEASED BY</label>
+            <input type="text" [(ngModel)]="bomForm.releasedBy" placeholder="Engineer name" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">RELEASE DATE</label>
+            <input type="date" [(ngModel)]="bomForm.releaseDate" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">RELEASE STATUS</label>
+            <select [(ngModel)]="bomForm.status" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+              <option value="Draft">Draft</option>
+              <option value="Released">Released</option>
+              <option value="Pending">Pending</option>
+              <option value="On Hold">On Hold</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">LINE ITEMS</label>
+            <input type="number" [(ngModel)]="bomForm.lineItemsCount" min="0" placeholder="0" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">VENDOR / SUPPLIER</label>
+            <input type="text" [(ngModel)]="bomForm.vendorSupplier" placeholder="Supplier name" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: DELIVERY TRACKING -->
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.875rem;">
+          DELIVERY TRACKING
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">DELIVERY STATUS</label>
+            <select [(ngModel)]="bomForm.deliveryStatus" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+              <option value="Pending">Pending</option>
+              <option value="In Transit">In Transit</option>
+              <option value="Partially Delivered">Partially Delivered</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">EXPECTED DELIVERY</label>
+            <input type="date" [(ngModel)]="bomForm.expectedDelivery" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">ACTUAL DELIVERY</label>
+            <input type="date" [(ngModel)]="bomForm.actualDelivery" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem; background: white;">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: COST TRACKING -->
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.875rem;">
+          COST TRACKING
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">ESTIMATED COST (₹)</label>
+            <input type="number" [(ngModel)]="bomForm.estimatedCost" min="0" placeholder="0" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #4b5563; text-transform: uppercase; margin-bottom: 0.375rem;">ACTUAL COST (₹)</label>
+            <input type="number" [(ngModel)]="bomForm.actualCost" min="0" placeholder="0" style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.875rem;">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer" style="padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 0.75rem; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+      <button class="btn-secondary" (click)="closeBomModal()" [disabled]="isSavingBom" style="padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #374151; font-weight: 500; cursor: pointer;">Cancel</button>
+      <button class="btn-primary" (click)="saveBom()" [disabled]="isSavingBom" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: var(--primary); color: white; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <span *ngIf="isSavingBom" class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span>
+        Add BOM
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- REVISION MODAL -->
+<div class="modal-overlay" *ngIf="showRevisionModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Create Revision</h2>
+      <button class="btn-close" (click)="closeRevisionModal()"><lucide-icon [img]="X" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body">
+      <div class="error-banner" *ngIf="revisionError">{{ revisionError }}</div>
+      <div style="background: #eff6ff; color: #1e3a8a; padding: 12px; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem;">
+        Creating a new revision will clone all items from the current revision.
+      </div>
+      <div class="form-group">
+        <label>Revision Description</label>
+        <input type="text" class="form-control" [(ngModel)]="revisionForm.description">
+      </div>
+      <div class="form-group">
+        <label>Change Reason</label>
+        <textarea class="form-control" [(ngModel)]="revisionForm.changeReason" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeRevisionModal()">Cancel</button>
+      <button class="btn-primary" (click)="saveRevision()" [disabled]="isSavingRevision">
+        {{ isSavingRevision ? 'Creating...' : 'Create Revision' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOM ITEM MODAL -->
+<div class="modal-overlay" *ngIf="showBomItemModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2>{{ editingBomItem ? 'Edit Item' : 'Add Item' }}</h2>
+      <button class="btn-close" (click)="closeBomItemModal()"><lucide-icon [img]="X" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body">
+      <div class="error-banner" *ngIf="bomItemError">{{ bomItemError }}</div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Part Number</label>
+          <input type="text" class="form-control" [(ngModel)]="bomItemForm.partNumber">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" class="form-control" [(ngModel)]="bomItemForm.description">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" class="form-control" [(ngModel)]="bomItemForm.quantity" min="1">
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" class="form-control" [(ngModel)]="bomItemForm.unit" placeholder="pcs, kg, m">
+        </div>
+        <div class="form-group">
+          <label>Unit Cost (₹)</label>
+          <input type="number" class="form-control" [(ngModel)]="bomItemForm.unitCost" min="0">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" class="form-control" [(ngModel)]="bomItemForm.category">
+        </div>
+        <div class="form-group">
+          <label>Make/Manufacturer</label>
+          <input type="text" class="form-control" [(ngModel)]="bomItemForm.make">
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeBomItemModal()">Cancel</button>
+      <button class="btn-primary" (click)="saveBomItem()" [disabled]="isSavingBomItem">
+        {{ isSavingBomItem ? 'Saving...' : 'Save Item' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE BOM ITEM MODAL -->
+<div class="modal-overlay" *ngIf="showDeleteBomItemModal">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h2>Delete Item</h2>
+      <button class="btn-close" (click)="showDeleteBomItemModal = false"><lucide-icon [img]="X" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>{{ bomItemToDelete?.partNumber }}</strong>? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showDeleteBomItemModal = false">Cancel</button>
+      <button class="btn-primary" style="background: #dc2626; border-color: #dc2626;" (click)="executeDeleteBomItem()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FINANCIALS TAB
+========================================================================== -->
+<div class="financials-tab-content" *ngIf="activeTab === 'Financials' && (isManager || isUnitHead)">
+
+  <!-- Header -->
+  <div class="tab-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin: 0;">Financials & Budget</h2>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn-secondary" (click)="openBudgetModal()">
+        <lucide-icon [img]="Edit" [size]="16"></lucide-icon> Update Budget
+      </button>
+      <button class="btn-primary" (click)="openAddTransactionModal()">
+        <lucide-icon [img]="Plus" [size]="16"></lucide-icon> Add Transaction
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="financialsLoading" class="loading-state">Loading Financial Data...</div>
+
+  <!-- Dashboard Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;" *ngIf="!financialsLoading && financialSummary">
+    
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Budget</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b;">₹{{ financialSummary.budget | number:'1.2-2' }}</div>
+    </div>
+    
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Actual Cost</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;">₹{{ financialSummary.actualCost | number:'1.2-2' }}</div>
+    </div>
+    
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Committed Cost</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">₹{{ financialSummary.committedCost | number:'1.2-2' }}</div>
+    </div>
+    
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Realized Revenue</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">₹{{ financialSummary.realizedRevenue | number:'1.2-2' }}</div>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Variance</div>
+      <div style="font-size: 1.5rem; font-weight: 700;" [ngStyle]="{'color': financialSummary.variance >= 0 ? '#10b981' : '#ef4444'}">
+        ₹{{ financialSummary.variance | number:'1.2-2' }}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Transactions List -->
+  <div class="list-container" *ngIf="!financialsLoading">
+    
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+      <button class="btn-secondary" [style.background]="transactionFilter === 'All' ? '#e2e8f0' : 'white'" (click)="setTransactionFilter('All')">All</button>
+      <button class="btn-secondary" [style.background]="transactionFilter === 'Inflow' ? '#e2e8f0' : 'white'" (click)="setTransactionFilter('Inflow')">Inflows (Revenue)</button>
+      <button class="btn-secondary" [style.background]="transactionFilter === 'Outflow' ? '#e2e8f0' : 'white'" (click)="setTransactionFilter('Outflow')">Outflows (Cost)</button>
+    </div>
+
+    <div *ngIf="filteredTransactions.length === 0" class="empty-state">
+      <span class="empty-icon">💸</span>
+      <h4>No Transactions</h4>
+      <p>Record an inflow or outflow.</p>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" *ngIf="filteredTransactions.length > 0">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+            <th style="padding: 0.875rem 1.25rem;">Date</th>
+            <th style="padding: 0.875rem 1.25rem;">Description</th>
+            <th style="padding: 0.875rem 1.25rem;">Category</th>
+            <th style="padding: 0.875rem 1.25rem;">Type</th>
+            <th style="padding: 0.875rem 1.25rem; text-align: center;">Status</th>
+            <th style="padding: 0.875rem 1.25rem; text-align: right;">Amount</th>
+            <th style="padding: 0.875rem 1.25rem;">Recorded By</th>
+            <th style="padding: 0.875rem 1.25rem; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let txn of filteredTransactions" style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+            <td style="padding: 1rem 1.25rem; color: #64748b; white-space: nowrap;">{{ txn.date | date:'mediumDate' }}</td>
+            <td style="padding: 1rem 1.25rem; font-weight: 600; color: #0f172a;">{{ txn.description }}</td>
+            <td style="padding: 1rem 1.25rem; color: #475569;">{{ txn.category }}</td>
+            <td style="padding: 1rem 1.25rem;">
+              <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; font-weight: 600;" [ngStyle]="{'color': txn.type === 'Inflow' ? '#047857' : '#b91c1c'}">
+                <span *ngIf="txn.type === 'Inflow'">⬇ Inflow</span>
+                <span *ngIf="txn.type === 'Outflow'">⬆ Outflow</span>
+              </span>
+            </td>
+            <td style="padding: 1rem 1.25rem; text-align: center;">
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #eff6ff; color: #1d4ed8;" *ngIf="txn.status === 'Planned'">Planned</span>
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #fff7ed; color: #c2410c;" *ngIf="txn.status === 'Pending'">Pending</span>
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #ecfdf5; color: #047857;" *ngIf="txn.status === 'Completed'">Completed</span>
+            </td>
+            <td style="padding: 1rem 1.25rem; font-weight: 700; text-align: right; white-space: nowrap;" [ngStyle]="{'color': txn.type === 'Inflow' ? '#059669' : '#dc2626'}">
+              {{ txn.type === 'Inflow' ? '+' : '-' }}₹{{ txn.amount | number:'1.2-2' }}
+            </td>
+            <td style="padding: 1rem 1.25rem; color: #475569;">{{ txn.createdBy?.employeeName || 'Unknown' }}</td>
+            <td style="padding: 1rem 1.25rem; text-align: right;">
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button (click)="openEditTransactionModal(txn)" style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #475569;"><lucide-icon [img]="Edit" [size]="14"></lucide-icon></button>
+                <button (click)="deleteTransaction(txn)" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #ef4444;"><lucide-icon [img]="Trash2" [size]="14"></lucide-icon></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="empty-state" *ngIf="activeTab === 'Financials' && !isManager && !isUnitHead">
+  <span class="empty-icon">🔒</span>
+  <h4>Access Denied</h4>
+  <p>You do not have permission to view project financials.</p>
+</div>
+
+<!-- =========================================================================
+     TRANSACTION MODAL (POP-UP)
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showTransactionModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;">
+    
+    <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #0f172a;">{{ editingTransaction ? 'Edit Transaction' : 'Add Financial Transaction' }}</h3>
+      <button (click)="closeTransactionModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer;">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+      <div *ngIf="transactionError" style="background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.875rem;">
+        {{ transactionError }}
+      </div>
+      
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Description *</label>
+        <input type="text" [(ngModel)]="transactionForm.description" placeholder="e.g., Hardware component purchase" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; outline: none;">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Transaction Type</label>
+          <select [(ngModel)]="transactionForm.type" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; background: white; outline: none;">
+            <option value="Outflow">Outflow (Cost)</option>
+            <option value="Inflow">Inflow (Revenue)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Amount (₹) *</label>
+          <input type="number" [(ngModel)]="transactionForm.amount" min="0" placeholder="0.00" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; outline: none;">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Status</label>
+          <select [(ngModel)]="transactionForm.status" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; background: white; outline: none;">
+            <option value="Planned">Planned</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Date</label>
+          <input type="date" [(ngModel)]="transactionForm.date" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; background: white; outline: none;">
+        </div>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Category</label>
+        <input type="text" [(ngModel)]="transactionForm.category" placeholder="e.g., Equipment, Software, Services" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; outline: none;">
+      </div>
+    </div>
+
+    <div style="padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button (click)="closeTransactionModal()" style="padding: 0.625rem 1rem; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #374151; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button (click)="saveTransaction()" [disabled]="isSavingTransaction" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: var(--primary, #dc2626); color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <span *ngIf="isSavingTransaction" class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span>
+        {{ isSavingTransaction ? 'Saving...' : 'Save Transaction' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     BUDGET MODAL (POP-UP)
+========================================================================== -->
+<div class="modal-overlay" *ngIf="showBudgetModal" style="position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="modal-content" style="background: white; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;">
+    
+    <div class="modal-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #0f172a;">Update Project Budget</h3>
+      <button (click)="closeBudgetModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer;">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+      <div *ngIf="budgetError" style="background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.875rem;">
+        {{ budgetError }}
+      </div>
+      
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; margin-bottom: 0.375rem;">Project Total Budget (₹) *</label>
+        <input type="number" [(ngModel)]="budgetForm.budget" min="0" placeholder="0.00" style="width: 100%; padding: 0.625rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.875rem; outline: none;">
+      </div>
+    </div>
+
+    <div style="padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button (click)="closeBudgetModal()" style="padding: 0.625rem 1rem; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #374151; font-weight: 600; cursor: pointer;">Cancel</button>
+      <button (click)="saveBudget()" [disabled]="isSavingBudget" style="padding: 0.625rem 1rem; border: none; border-radius: 6px; background: var(--primary, #dc2626); color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <span *ngIf="isSavingBudget" class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem;"></span>
+        {{ isSavingBudget ? 'Saving...' : 'Save Budget' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     RESOURCE & EFFORT MANAGEMENT TAB
+========================================================================== -->
+<div class="resources-tab-content" *ngIf="activeTab === 'Resources'" style="padding: 1.5rem;">
+
+  <!-- Header -->
+  <div class="tab-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin: 0;">Resource & Effort Management</h2>
+      <p style="color: #64748b; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Track team allocations, task effort variance, and resource utilization.</p>
+    </div>
+    <button class="btn-primary" (click)="openAddAllocationModal()" *ngIf="isManager || isLead || isUnitHead">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon> Allocate Resource
+    </button>
+  </div>
+
+  <div *ngIf="resourcesLoading" class="loading-state">Loading Resource Data...</div>
+
+  <!-- Summary Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;" *ngIf="!resourcesLoading && resourceUtilization">
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Allocated Team Members</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b;">{{ resourceUtilization.summary.totalAllocatedResources }}</div>
+    </div>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Total Estimated Effort</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;">{{ resourceUtilization.summary.totalEstimatedHours }} hrs</div>
+    </div>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Total Actual Effort</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">{{ resourceUtilization.summary.totalActualHours }} hrs</div>
+    </div>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Remaining Hours</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">{{ resourceUtilization.summary.remainingHours }} hrs</div>
+    </div>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+      <div style="color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Overall Utilization</div>
+      <div style="font-size: 1.5rem; font-weight: 700;" [ngStyle]="{'color': resourceUtilization.summary.overallUtilization > 100 ? '#ef4444' : '#10b981'}">
+        {{ resourceUtilization.summary.overallUtilization }}%
+      </div>
+    </div>
+  </div>
+
+  <!-- Resource Allocations Table -->
+  <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem;" *ngIf="!resourcesLoading">
+    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b;">Team Resource Allocations</h3>
+    
+    <div *ngIf="resourceAllocations.length === 0" style="text-align: center; color: #64748b; padding: 2rem;">
+      No resource allocations registered for this project yet.
+    </div>
+
+    <table class="rflow-table" *ngIf="resourceAllocations.length > 0" style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Team Member</th>
+          <th>Department</th>
+          <th>Project Role</th>
+          <th>Allocation %</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+          <th *ngIf="isManager || isLead || isUnitHead">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alloc of resourceAllocations">
+          <td style="font-weight: 500;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="avatar-small" style="width: 28px; height: 28px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                {{ getInitials(alloc.userId?.employeeName) }}
+              </div>
+              <div>
+                <div>{{ alloc.userId?.employeeName || 'Unknown User' }}</div>
+                <div style="font-size: 0.75rem; color: #64748b;">{{ alloc.userId?.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ alloc.departmentId?.departmentName || alloc.userId?.department || '—' }}</td>
+          <td><span style="background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;">{{ alloc.projectRole }}</span></td>
+          <td style="font-weight: 600; color: #2563eb;">{{ alloc.allocationPercentage }}%</td>
+          <td>{{ formatDate(alloc.startDate) }}</td>
+          <td>{{ alloc.endDate ? formatDate(alloc.endDate) : 'Ongoing' }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-success': alloc.status === 'Active',
+              'badge-warning': alloc.status === 'Inactive',
+              'badge-secondary': alloc.status === 'Completed'
+            }">{{ alloc.status }}</span>
+          </td>
+          <td *ngIf="isManager || isLead || isUnitHead">
+            <button (click)="deleteAllocation(alloc._id!)" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Remove Allocation">
+              <lucide-icon [img]="Trash2" [size]="16"></lucide-icon>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Resource Effort Breakdown & Work Logs -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;" *ngIf="!resourcesLoading && resourceUtilization">
+    <!-- Resource Effort Chart / Breakdown -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+      <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b;">Member Effort Breakdown</h3>
+      <div *ngIf="resourceUtilization.resourceEffort.length === 0" style="color: #64748b; text-align: center; padding: 1.5rem;">
+        No task effort recorded yet.
+      </div>
+      <div *ngFor="let item of resourceUtilization.resourceEffort" style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem;">
+          <span style="font-weight: 500;">{{ item.userName }} ({{ item.allocatedPct }}% alloc)</span>
+          <span style="color: #64748b;">{{ item.actualHours }} / {{ item.estimatedHours }} hrs</span>
+        </div>
+        <div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+          <div class="progress-fill" [style.width.%]="item.estimatedHours ? Math.min((item.actualHours / item.estimatedHours)*100, 100) : 0" 
+               [style.background]="item.actualHours > item.estimatedHours ? '#ef4444' : '#10b981'" style="height: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Quick Work Log List -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+      <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b;">Task Work Logging</h3>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Select a task below to log work hours directly.</p>
+      
+      <div style="max-height: 250px; overflow-y: auto;">
+        <div *ngFor="let t of tasks" (click)="openWorkLogModal(t)" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; border: 1px solid #f1f5f9; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; background: #fafafa;">
+          <div>
+            <div style="font-size: 0.875rem; font-weight: 600; color: #0f172a;">{{ t.taskId }}: {{ t.summary }}</div>
+            <div style="font-size: 0.75rem; color: #64748b;">Assignee: {{ t.assigneeId?.employeeName || 'Unassigned' }}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #2563eb; font-weight: 600;">{{ t.actualHours || 0 }} / {{ t.estimatedHours || 0 }}h</span>
+            <button class="btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;">+ Log</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ADD RESOURCE ALLOCATION MODAL -->
+<div class="modal-overlay" *ngIf="showAddAllocationModal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header">
+      <h2>Allocate Team Member</h2>
+      <button class="btn-close" (click)="closeAddAllocationModal()"><lucide-icon [img]="X" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Select Team Member</label>
+        <select class="form-control" [(ngModel)]="allocationForm.userId">
+          <option value="">Select User...</option>
+          <option *ngFor="let u of userList" [value]="u._id">{{ u.employeeName }} ({{ u.role }} - {{ u.department }})</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Project Role</label>
+        <input type="text" class="form-control" [(ngModel)]="allocationForm.projectRole" placeholder="e.g. Lead Developer, Systems Engineer">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Allocation %</label>
+          <input type="number" class="form-control" [(ngModel)]="allocationForm.allocationPercentage" min="10" max="100">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" [(ngModel)]="allocationForm.status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" class="form-control" [(ngModel)]="allocationForm.startDate">
+        </div>
+        <div class="form-group">
+          <label>End Date (Optional)</label>
+          <input type="date" class="form-control" [(ngModel)]="allocationForm.endDate">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeAddAllocationModal()">Cancel</button>
+      <button class="btn-primary" (click)="saveResourceAllocation()">Save Allocation</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORK LOG MODAL -->
+<div class="modal-overlay" *ngIf="showWorkLogModal">
+  <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-header">
+      <h2>Log Work: {{ selectedTaskForWorkLog?.taskId }}</h2>
+      <button class="btn-close" (click)="closeWorkLogModal()"><lucide-icon [img]="X" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body">
+      <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
+        <div style="font-weight: 600; font-size: 0.95rem;">{{ selectedTaskForWorkLog?.summary }}</div>
+        <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.25rem;">
+          Estimated: {{ selectedTaskForWorkLog?.estimatedHours || 0 }} hrs | Logged Actual: {{ selectedTaskForWorkLog?.actualHours || 0 }} hrs
+        </div>
+      </div>
+
+      <!-- Add New Entry -->
+      <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1rem;">
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Add Time Entry</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Hours Logged</label>
+            <input type="number" class="form-control" [(ngModel)]="workLogForm.hoursLogged" min="0.25" step="0.5">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Work Date</label>
+            <input type="date" class="form-control" [(ngModel)]="workLogForm.workDate">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label>Work Description / Notes</label>
+          <input type="text" class="form-control" [(ngModel)]="workLogForm.description" placeholder="What did you work on?">
+        </div>
+        <button class="btn-primary" (click)="saveWorkLog()" style="width: 100%;">Record Hours</button>
+      </div>
+
+      <!-- Existing Logs List -->
+      <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Logged Time History</h4>
+      <div *ngIf="taskWorkLogs.length === 0" style="font-size: 0.85rem; color: #64748b; text-align: center; padding: 1rem;">
+        No work logs recorded for this task yet.
+      </div>
+      <div style="max-height: 180px; overflow-y: auto;">
+        <div *ngFor="let log of taskWorkLogs" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+          <div>
+            <span style="font-weight: 600;">{{ log.hoursLogged }} hrs</span> by {{ log.userId?.employeeName || 'User' }}
+            <span style="color: #64748b; margin-left: 0.5rem;">({{ formatDate(log.workDate) }})</span>
+            <div style="color: #475569; font-size: 0.8rem;" *ngIf="log.description">{{ log.description }}</div>
+          </div>
+          <button (click)="deleteWorkLog(log._id!)" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Log">
+            <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeWorkLogModal()">Close</button>
+    </div>
+  </div>
+</div>
+<app-project-procurement *ngIf="activeTab === 'Procurement'" [projectId]="projectId"></app-project-procurement>
+
+<app-task-form
+  *ngIf="showTaskForm"
+  [task]="selectedTaskToEdit"
+  [preselectedProjectId]="projectId"
+  (close)="closeTaskForm()"
+  (save)="onTaskSaved()">
+</app-task-form>
+
+</main>
+</div>

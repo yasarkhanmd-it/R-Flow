@@ -1,0 +1,172 @@
+<div class="auth-container">
+  <!-- Left Side: Brand Panel -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="logo-area">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <span class="company-name">ROBIS</span>
+      </div>
+
+      <div class="message-area">
+        <h1>Verify Your Identity</h1>
+        <h2>OTP Verification</h2>
+
+        <div class="value-prop">
+          <p>Secure.</p>
+          <p>Private.</p>
+          <p>Protected.</p>
+        </div>
+
+        <p class="description">A one-time password has been generated. Check the backend console for the OTP code.</p>
+      </div>
+    </div>
+
+    <div class="brand-footer">
+      <span>Version 1.0</span>
+      <span>Powered by ROBIS</span>
+    </div>
+  </div>
+
+  <!-- Right Side: Form Panel -->
+  <div class="form-panel">
+    <div class="auth-card">
+      <div class="card-header">
+        <h2 class="app-logo">RFlow</h2>
+        <p class="app-subtitle">Project Management System</p>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Shield Icon -->
+        <div class="icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+
+        <h3 class="welcome-text">Enter OTP</h3>
+        <p class="instruction-text">
+          Enter the 6-digit OTP for<br>
+          <strong>{{ getMaskedEmail() }}</strong>
+        </p>
+
+        <!-- Error Banner -->
+        <div class="error-banner" *ngIf="serverError">
+          {{ serverError }}
+        </div>
+
+        <!--
+          OTP Input Grid
+          ─────────────────────────────────────────────────────────
+          Each input:
+          • type="text" so we get keydown.key reliably on all browsers
+          • inputmode="numeric" shows numeric keyboard on mobile
+          • maxlength="1" as a fallback safety net
+          • NO (input) binding — all handling is via (keydown) only
+          • (paste) is on the container div so it fires regardless of
+            which box is focused
+        -->
+        <div class="otp-container" (paste)="onPaste($event)">
+          <input
+            *ngFor="let digit of digits; let i = index; trackBy: trackByIndex"
+            #otpBox
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            autocomplete="one-time-code"
+            spellcheck="false"
+            [id]="'otp-box-' + i"
+            [attr.aria-label]="'OTP digit ' + (i + 1)"
+            [class.filled]="digits[i] !== ''"
+            [class.error]="!!serverError"
+            class="otp-input"
+            (keydown)="onKeyDown($event, i)"
+            (focus)="onFocus(i)">
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="timer-wrapper">
+          <div class="timer" [class.expired]="isTimerExpired">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span *ngIf="!isTimerExpired">OTP expires in {{ formattedTime }}</span>
+            <span *ngIf="isTimerExpired">OTP has expired</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+
+          <!-- Verify OTP -->
+          <button
+            type="button"
+            id="otp-verify-btn"
+            class="btn-primary"
+            [disabled]="!isOtpComplete || isVerifying || isTimerExpired"
+            (click)="verify()">
+            <span *ngIf="!isVerifying" class="btn-content">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Verify OTP
+            </span>
+            <span *ngIf="isVerifying" class="spinner"></span>
+          </button>
+
+          <!-- Resend OTP -->
+          <button
+            type="button"
+            id="otp-resend-btn"
+            class="btn-secondary"
+            [disabled]="!canResend"
+            (click)="resendOtp()">
+            <span *ngIf="!isResending" class="btn-content">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              {{ isTimerExpired ? 'Resend OTP' : 'Resend available after timer' }}
+            </span>
+            <span *ngIf="isResending" class="spinner-dark"></span>
+          </button>
+
+          <!-- Back -->
+          <button type="button" id="otp-back-btn" class="btn-link" (click)="goBack()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back
+          </button>
+        </div>
+
+        <!-- Dev hint -->
+        <p class="hint-text" *ngIf="!isTimerExpired">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
+          Development mode: OTP is printed in the Auth Service console.
+        </p>
+
+      </div><!-- /card-body -->
+
+      <div class="card-footer">
+        <p>Wrong email? <a routerLink="/forgot-password" class="link">Try again</a></p>
+      </div>
+    </div><!-- /auth-card -->
+
+    <!-- Page Footer -->
+    <div class="page-footer">
+      <div class="environment-info">
+        <span>Application Version: 1.0</span>
+        <span>Environment: Development</span>
+      </div>
+      <div class="legal-links">
+        <span>&copy; 2026 ROBIS. All Rights Reserved.</span>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </div>
+    </div>
+  </div><!-- /form-panel -->
+</div>

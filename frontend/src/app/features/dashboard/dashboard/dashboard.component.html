@@ -1,0 +1,753 @@
+<div class="dashboard-page">
+  <!-- Top Welcome Header -->
+  <header class="page-header">
+    <div>
+      <h1>Welcome back, {{ user?.employeeName || 'Employee' }}! <span class="wave">&#128075;</span></h1>
+      <p>Here's what's happening with your work today.</p>
+    </div>
+    <div class="date-badge">
+      <lucide-icon [img]="Calendar" [size]="16"></lucide-icon>
+      <span>{{ currentDate | date:'EEEE, MMMM d, y' }}</span>
+    </div>
+  </header>
+
+  <!-- LOADING SKELETON STATE -->
+  <div class="skeleton-container" *ngIf="isLoading">
+    <div class="skeleton-summary-grid">
+      <div class="skeleton-card" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+    <div class="skeleton-panels">
+      <div class="skeleton-left-panel"></div>
+      <div class="skeleton-right-panel"></div>
+    </div>
+  </div>
+
+  <!-- MAIN DYNAMIC CONTENT -->
+  <ng-container *ngIf="!isLoading && dashboardData">
+    
+    <!-- ================= MANAGER DASHBOARD ================= -->
+    <ng-container *ngIf="user?.role === 'Manager'">
+      <!-- Manager Summary Cards -->
+      <section class="summary-grid manager">
+        <article class="summary-card">
+          <div class="summary-icon blue">
+            <lucide-icon [img]="Folder" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Total Projects</h2>
+            <strong>{{ dashboardData.stats.totalProjects }}</strong>
+            <p>Active managed projects</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon green">
+            <lucide-icon [img]="Users" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Total Employees</h2>
+            <strong>{{ dashboardData.stats.totalEmployees }}</strong>
+            <p>Active project members</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon purple">
+            <lucide-icon [img]="ClipboardList" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Total Tasks</h2>
+            <strong>{{ dashboardData.stats.totalTasks }}</strong>
+            <p>{{ dashboardData.stats.completedTasks }} Completed • {{ dashboardData.stats.pendingTasks }} Pending</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon red">
+            <lucide-icon [img]="AlertCircle" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Overdue Tasks</h2>
+            <strong class="text-danger">{{ dashboardData.stats.overdueTasks }}</strong>
+            <p>Passed their due date</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Manager Dashboard Layout -->
+      <div class="panel-layout">
+        <!-- Left Side (Main Stats & Timeline) -->
+        <div class="panel-main">
+          <!-- Manager My Work Sections -->
+          <article class="content-panel mb-4">
+            <div class="panel-header">
+              <h2>My Work (Manager)</h2>
+            </div>
+            
+            <!-- Active Modules -->
+            <div class="work-section mt-3">
+              <h3 class="text-md fw-bold mb-2 text-primary">Active Modules ({{ dashboardData.myWork.activeModules.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.activeModules.length === 0">
+                <p>No active modules.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.activeModules.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let mod of dashboardData.myWork.activeModules" [routerLink]="['/projects', mod.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell fw-bold">{{ mod.name }}</td>
+                      <td class="task-proj-cell">{{ mod.projectName }}</td>
+                      <td>
+                        <span class="s-badge" [ngClass]="mod.status.toLowerCase().replace(' ', '')">{{ mod.status }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Overdue Tasks -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-danger">Overdue Tasks ({{ dashboardData.myWork.overdueTasksList.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.overdueTasksList.length === 0">
+                <p>No overdue tasks.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.overdueTasksList.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.overdueTasksList" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-proj-cell">{{ task.projectName }}</td>
+                      <td class="task-assignee-cell">{{ task.assigneeName }}</td>
+                      <td class="task-date-cell text-danger fw-bold">{{ formatDate(task.dueDate) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+
+          <!-- Project Overview Panel (Project Health) -->
+          <article class="content-panel">
+            <div class="panel-header">
+              <h2>Project Health Overview</h2>
+              <a routerLink="/projects">View All</a>
+            </div>
+            
+            <div class="empty-state py-4" *ngIf="dashboardData.projectOverview.length === 0">
+              <span class="empty-icon">📂</span>
+              <h3>No projects managed yet</h3>
+              <p>Create a project to start tracking team workflows.</p>
+            </div>
+
+            <div class="project-overview-list" *ngIf="dashboardData.projectOverview.length > 0">
+              <div class="project-overview-item" *ngFor="let proj of dashboardData.projectOverview" [routerLink]="['/projects', proj._id, 'board']">
+                <div class="proj-details">
+                  <span class="proj-name">{{ proj.name }}</span>
+                  <span class="proj-meta">{{ proj.membersCount }} members • {{ proj.totalTasks }} tasks</span>
+                </div>
+                <div class="proj-stats-row">
+                  <div class="progress-box">
+                    <span class="progress-label">Progress {{ proj.progress }}%</span>
+                    <div class="progress-track">
+                      <div class="progress-fill" [style.width.%]="proj.progress"></div>
+                    </div>
+                  </div>
+                  <div class="task-tallies">
+                    <span class="tally completed">{{ proj.completedTasks }} Done</span>
+                    <span class="tally pending">{{ proj.pendingTasks }} Pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Recent Activity Timeline Panel -->
+          <article class="content-panel mt-4">
+            <div class="panel-header">
+              <h2>Recent Activity</h2>
+              <lucide-icon [img]="Activity" [size]="16" class="text-muted"></lucide-icon>
+            </div>
+
+            <div class="empty-state py-4" *ngIf="dashboardData.recentActivity.length === 0">
+              <span class="empty-icon">📈</span>
+              <h3>No recent activity</h3>
+              <p>Team updates and requests will show up in this timeline.</p>
+            </div>
+
+            <div class="activity-timeline" *ngIf="dashboardData.recentActivity.length > 0">
+              <div class="timeline-item" *ngFor="let act of dashboardData.recentActivity">
+                <div class="time-column">
+                  <span class="time">{{ formatTime(act.timestamp) }}</span>
+                  <span class="date">{{ formatDate(act.timestamp) }}</span>
+                </div>
+                <div class="bullet-column">
+                  <span class="timeline-bullet"></span>
+                </div>
+                <div class="activity-desc">
+                  <strong class="user-name">{{ act.userName }}</strong>
+                  <span class="action-text"> {{ act.action }}</span>
+                  <p class="activity-details" *ngIf="act.details">{{ act.details }}</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Right Side (Actions & Deadlines & Notifications) -->
+        <div class="panel-sidebar">
+          <!-- Quick Actions -->
+          <article class="content-panel compact">
+            <div class="panel-header">
+              <h2>Quick Actions</h2>
+            </div>
+            <div class="quick-actions-list">
+              <button class="btn-action" (click)="handleQuickAction('create-project')">
+                <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                <span>Create Project</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('new-task')">
+                <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                <span>Create Task</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('manage-requests')">
+                <lucide-icon [img]="Users" [size]="14"></lucide-icon>
+                <span>Manage Join Requests</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('view-reports')">
+                <lucide-icon [img]="Activity" [size]="14"></lucide-icon>
+                <span>View Reports</span>
+              </button>
+            </div>
+          </article>
+
+          <!-- Pending Notifications Widget -->
+          <article class="content-panel compact mt-4">
+            <div class="panel-header">
+              <h2>Join Requests</h2>
+              <span class="notif-badge" *ngIf="dashboardData.pendingNotifications.length > 0">{{ dashboardData.pendingNotifications.length }}</span>
+            </div>
+
+            <div class="empty-state py-3" *ngIf="dashboardData.pendingNotifications.length === 0">
+              <span class="empty-icon">🔔</span>
+              <h3>All caught up</h3>
+              <p>No pending join requests.</p>
+            </div>
+
+            <div class="join-requests-list" *ngIf="dashboardData.pendingNotifications.length > 0">
+              <div class="join-request-item" *ngFor="let notif of dashboardData.pendingNotifications">
+                <div class="notif-details">
+                  <strong class="applicant">{{ notif.fromUser?.employeeName }}</strong>
+                  <span class="dept">Dept: {{ notif.fromUser?.department }}</span>
+                  <span class="proj">Wants to join: {{ notif.project?.name || 'Deleted Project' }}</span>
+                </div>
+                <button class="btn-approve-direct" (click)="approveRequest(notif._id, $event)" title="Approve Request">
+                  <lucide-icon [img]="Check" [size]="14"></lucide-icon>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Manager Upcoming Deadlines Widget -->
+          <article class="content-panel compact mt-4">
+            <div class="panel-header">
+              <h2>Upcoming Deadlines</h2>
+              <lucide-icon [img]="Timer" [size]="16" class="text-muted"></lucide-icon>
+            </div>
+
+            <div class="empty-state py-3" *ngIf="dashboardData.upcomingDeadlines.length === 0">
+              <span class="empty-icon">📅</span>
+              <h3>Nothing due soon</h3>
+              <p>No deadlines in the next 7 days.</p>
+            </div>
+
+            <div class="deadline-tasks-list" *ngIf="dashboardData.upcomingDeadlines.length > 0">
+              <div class="deadline-task-item" *ngFor="let task of dashboardData.upcomingDeadlines" [class.overdue]="task.isOverdue">
+                <div class="task-info">
+                  <span class="task-summary">{{ task.summary }}</span>
+                  <span class="task-assignee">{{ task.assigneeName }} • {{ task.priority }}</span>
+                </div>
+                <span class="task-date">{{ formatDate(task.dueDate) }}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ================= EMPLOYEE DASHBOARD ================= -->
+    <ng-container *ngIf="user?.role === 'Employee' || user?.role === 'User'">
+      <!-- Employee Summary Cards -->
+      <section class="summary-grid">
+        <article class="summary-card">
+          <div class="summary-icon blue">
+            <lucide-icon [img]="ClipboardList" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>My Tasks</h2>
+            <strong>{{ dashboardData.stats.tasks.total }}</strong>
+            <p>{{ dashboardData.stats.tasks.pending }} Pending • {{ dashboardData.stats.tasks.completed }} Completed</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon green">
+            <lucide-icon [img]="Folder" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>My Projects</h2>
+            <strong>{{ dashboardData.stats.projects.total }}</strong>
+            <p>{{ dashboardData.stats.projects.active }} Active Joined</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon purple">
+            <lucide-icon [img]="CheckCircle2" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Completed Tasks</h2>
+            <strong>{{ dashboardData.stats.completedTasks.total }}</strong>
+            <p>{{ dashboardData.stats.completedTasks.percentage }}% Completion Rate</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon orange">
+            <lucide-icon [img]="Timer" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Upcoming Deadlines</h2>
+            <strong [class.text-danger]="dashboardData.stats.upcomingDeadlines > 0">{{ dashboardData.stats.upcomingDeadlines }}</strong>
+            <p>Due in the next 7 days</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Employee Dashboard Layout -->
+      <div class="panel-layout">
+        <!-- Left Column (Tasks & Projects List) -->
+        <div class="panel-main">
+          <!-- Employee My Work Sections -->
+          <article class="content-panel">
+            <div class="panel-header">
+              <h2>My Work</h2>
+            </div>
+            
+            <!-- Due Today -->
+            <div class="work-section mt-3">
+              <h3 class="text-md fw-bold mb-2">Due Today ({{ dashboardData.myWork.dueToday.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.dueToday.length === 0">
+                <p>No tasks due today.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.dueToday.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.dueToday" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell">{{ task.taskId }}</td>
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td><span class="p-badge" [ngClass]="task.priority.toLowerCase()">{{ task.priority }}</span></td>
+                      <td><span class="s-badge" [ngClass]="task.status.toLowerCase().replace(' ', '')">{{ task.status }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Overdue -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-danger">Overdue ({{ dashboardData.myWork.overdue.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.overdue.length === 0">
+                <p>No overdue tasks.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.overdue.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.overdue" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell">{{ task.taskId }}</td>
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-date-cell text-danger fw-bold">{{ formatDate(task.dueDate) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- In Progress -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-primary">In Progress ({{ dashboardData.myWork.inProgress.length }})</h3>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.inProgress.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.inProgress" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell">{{ task.taskId }}</td>
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-proj-cell">{{ task.projectId?.name }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pending Review -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-warning">Pending Review ({{ dashboardData.myWork.pendingReview.length }})</h3>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.pendingReview.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.pendingReview" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell">{{ task.taskId }}</td>
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-proj-cell">{{ task.projectId?.name }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Recently Completed -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-success">Recently Completed</h3>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.recentlyCompleted.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.recentlyCompleted" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell">{{ task.taskId }}</td>
+                      <td class="task-summary-cell text-muted" style="text-decoration: line-through;">{{ task.summary }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Right Column (Sidebar Quick Actions & Deadlines) -->
+        <div class="panel-sidebar">
+          <!-- Quick Actions -->
+          <article class="content-panel compact">
+            <div class="panel-header">
+              <h2>Quick Actions</h2>
+            </div>
+            <div class="quick-actions-list">
+              <button class="btn-action" (click)="handleQuickAction('new-task')">
+                <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                <span>New Task</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('view-projects')">
+                <lucide-icon [img]="FolderOpen" [size]="14"></lucide-icon>
+                <span>View Projects</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('view-tasks')">
+                <lucide-icon [img]="ClipboardList" [size]="14"></lucide-icon>
+                <span>View My Tasks</span>
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ================= TEAM LEAD DASHBOARD ================= -->
+    <ng-container *ngIf="user?.role === 'Lead'">
+      <!-- Team Lead Summary Cards -->
+      <section class="summary-grid manager">
+        <article class="summary-card">
+          <div class="summary-icon blue">
+            <lucide-icon [img]="Folder" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Assigned Projects</h2>
+            <strong>{{ dashboardData.stats.assignedProjects }}</strong>
+            <p>Total projects assigned</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon orange">
+            <lucide-icon [img]="AlertCircle" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Pending Acceptance</h2>
+            <strong class="text-warning">{{ dashboardData.stats.pendingAcceptance }}</strong>
+            <p>Awaiting your review</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon green">
+            <lucide-icon [img]="FolderOpen" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Active Projects</h2>
+            <strong>{{ dashboardData.stats.activeProjects }}</strong>
+            <p>Accepted & active</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon purple">
+            <lucide-icon [img]="ClipboardList" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Total Tasks</h2>
+            <strong>{{ dashboardData.stats.totalTasks }}</strong>
+            <p>{{ dashboardData.stats.completedTasks }} Done • {{ dashboardData.stats.pendingTasks }} Pending</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Second Row of Cards for Team Lead -->
+      <section class="summary-grid mt-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <article class="summary-card">
+          <div class="summary-icon green">
+            <lucide-icon [img]="CheckCircle2" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Completed Tasks</h2>
+            <strong>{{ dashboardData.stats.completedTasks }}</strong>
+            <p>Tasks completed</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon blue">
+            <lucide-icon [img]="ClipboardList" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Pending Tasks</h2>
+            <strong>{{ dashboardData.stats.pendingTasks }}</strong>
+            <p>Tasks in progress/todo</p>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-icon red">
+            <lucide-icon [img]="Timer" [size]="22"></lucide-icon>
+          </div>
+          <div>
+            <h2>Overdue Tasks</h2>
+            <strong class="text-danger">{{ dashboardData.stats.overdueTasks }}</strong>
+            <p>Passed due date</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- TEAM LEAD APPROVAL SCREEN -->
+      <article class="content-panel mt-4" *ngIf="dashboardData.stats.pendingAcceptance > 0">
+        <div class="panel-header" style="border-bottom: 1px solid #f3f4f6; padding-bottom: 0.75rem;">
+          <h2>🔔 Newly Assigned Projects (Approval Required)</h2>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem;">
+          <ng-container *ngFor="let proj of dashboardData.latestProjects">
+            <div *ngIf="proj.status === 'Assigned' || proj.status === 'Pending Acceptance'" 
+                 style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #111827;">{{ proj.name }}</h3>
+                  <span style="font-size: 0.875rem; color: #4b5563;">Assigned by: <strong>{{ proj.managerName }}</strong></span>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                  <button type="button" class="btn btn-primary" (click)="acceptProject(proj._id)">Accept Project</button>
+                  <button type="button" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;" (click)="rejectProject(proj._id)">Reject Project</button>
+                </div>
+              </div>
+              <p style="margin: 0; font-size: 0.875rem; color: #4b5563; line-height: 1.4;">{{ proj.description || 'No description provided.' }}</p>
+              <div style="display: flex; gap: 1.5rem; font-size: 0.75rem; color: #6b7280; border-top: 1px solid #f3f4f6; padding-top: 0.75rem;">
+                <span>Assigned Date: <strong>{{ formatDate(proj.assignedDate) }}</strong></span>
+                <span>Expected End Date: <strong>{{ formatDate(proj.expectedEndDate) }}</strong></span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </article>
+
+      <!-- Team Lead Dashboard Layout -->
+      <div class="panel-layout mt-4">
+        <!-- Left Side: My Work & Timeline -->
+        <div class="panel-main">
+          
+          <!-- Team Lead My Work Sections -->
+          <article class="content-panel mb-4">
+            <div class="panel-header">
+              <h2>My Work (Team Lead)</h2>
+            </div>
+            
+            <!-- Pending Module Approvals -->
+            <div class="work-section mt-3">
+              <h3 class="text-md fw-bold mb-2 text-warning">Pending Module Approvals ({{ dashboardData.myWork.pendingModuleApprovals.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.pendingModuleApprovals.length === 0">
+                <p>No modules waiting for approval.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.pendingModuleApprovals.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let mod of dashboardData.myWork.pendingModuleApprovals" [routerLink]="['/projects', mod.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-id-cell fw-bold">{{ mod.name }}</td>
+                      <td class="task-proj-cell">{{ mod.projectName }}</td>
+                      <td class="task-summary-cell text-muted">Created by {{ mod.createdBy }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pending Task Reviews -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-primary">Pending Task Reviews ({{ dashboardData.myWork.pendingTaskReviews.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.pendingTaskReviews.length === 0">
+                <p>No tasks waiting for review.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.pendingTaskReviews.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.pendingTaskReviews" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-proj-cell">{{ task.projectName }}</td>
+                      <td class="task-assignee-cell">{{ task.assigneeName }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Blocked Tasks (Overdue) -->
+            <div class="work-section mt-4">
+              <h3 class="text-md fw-bold mb-2 text-danger">Blocked / Overdue Tasks ({{ dashboardData.myWork.blockedTasks.length }})</h3>
+              <div class="empty-state py-2" *ngIf="dashboardData.myWork.blockedTasks.length === 0">
+                <p>No blocked or overdue tasks.</p>
+              </div>
+              <div class="dashboard-tasks-table-wrapper" *ngIf="dashboardData.myWork.blockedTasks.length > 0">
+                <table class="dashboard-tasks-table">
+                  <tbody>
+                    <tr *ngFor="let task of dashboardData.myWork.blockedTasks" [routerLink]="['/projects', task.projectId?._id, 'board']" class="clickable-tr">
+                      <td class="task-summary-cell">{{ task.summary }}</td>
+                      <td class="task-proj-cell">{{ task.projectName }}</td>
+                      <td class="task-assignee-cell">{{ task.assigneeName }}</td>
+                      <td class="task-date-cell text-danger fw-bold">{{ formatDate(task.dueDate) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+
+          <!-- Employee Workload Monitoring Panel -->
+          <article class="content-panel">
+            <div class="panel-header">
+              <h2>Team Progress</h2>
+              <lucide-icon [img]="Users" [size]="16" class="text-muted"></lucide-icon>
+            </div>
+            
+            <div class="empty-state py-4" *ngIf="dashboardData.employeeProgress.length === 0">
+              <span class="empty-icon">👥</span>
+              <h3>No employees assigned</h3>
+              <p>When employees join your accepted projects, they will be listed here.</p>
+            </div>
+
+            <div class="table-container" *ngIf="dashboardData.employeeProgress.length > 0" style="margin-top: 1rem; border: none; box-shadow: none; padding: 0;">
+              <table class="data-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Employee Name</th>
+                    <th>Pending Tasks</th>
+                    <th>Completed Tasks</th>
+                    <th>Overdue Tasks</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let emp of dashboardData.employeeProgress">
+                    <td class="fw-bold" style="display: flex; align-items: center; gap: 0.75rem;">
+                      <div class="avatar-small" style="width: 28px; height: 28px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600;">
+                        {{ getInitials(emp.employeeName) }}
+                      </div>
+                      <span>{{ emp.employeeName }}</span>
+                    </td>
+                    <td>
+                      <span class="badge badge-primary">{{ emp.pendingCount }} pending</span>
+                    </td>
+                    <td>
+                      <span class="badge badge-success">{{ emp.completedCount }} completed</span>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="emp.overdueCount > 0 ? 'badge-danger' : 'badge-success'">
+                        {{ emp.overdueCount }} overdue
+                      </span>
+                    </td>
+                    <td>
+                      <span class="text-sm text-muted" *ngIf="emp.pendingCount > 2">High Workload</span>
+                      <span class="text-sm text-success" *ngIf="emp.pendingCount <= 2">Optimal</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <!-- Recent Activity Timeline Panel -->
+          <article class="content-panel mt-4">
+            <div class="panel-header">
+              <h2>Recent Project Activity</h2>
+              <lucide-icon [img]="Activity" [size]="16" class="text-muted"></lucide-icon>
+            </div>
+
+            <div class="empty-state py-4" *ngIf="dashboardData.recentActivity.length === 0">
+              <span class="empty-icon">📈</span>
+              <h3>No recent activity</h3>
+              <p>Team updates will show up here.</p>
+            </div>
+
+            <div class="activity-timeline" *ngIf="dashboardData.recentActivity.length > 0">
+              <div class="timeline-item" *ngFor="let act of dashboardData.recentActivity">
+                <div class="time-column">
+                  <span class="time">{{ formatTime(act.timestamp) }}</span>
+                  <span class="date">{{ formatDate(act.timestamp) }}</span>
+                </div>
+                <div class="bullet-column">
+                  <span class="timeline-bullet"></span>
+                </div>
+                <div class="activity-desc">
+                  <strong class="user-name">{{ act.userName }}</strong>
+                  <span class="action-text"> {{ act.action }}</span>
+                  <p class="activity-details" *ngIf="act.details">{{ act.details }}</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Right Side: Sidebar Quick Actions -->
+        <div class="panel-sidebar">
+          <!-- Quick Actions -->
+          <article class="content-panel compact">
+            <div class="panel-header">
+              <h2>Quick Actions</h2>
+            </div>
+            <div class="quick-actions-list">
+              <button class="btn-action" (click)="handleQuickAction('new-task')" [disabled]="dashboardData.stats.activeProjects === 0">
+                <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                <span>Create Task</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('view-projects')">
+                <lucide-icon [img]="FolderOpen" [size]="14"></lucide-icon>
+                <span>View Projects</span>
+              </button>
+              <button class="btn-action" (click)="handleQuickAction('view-reports')">
+                <lucide-icon [img]="Activity" [size]="14"></lucide-icon>
+                <span>View Reports</span>
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </ng-container>
+
+  </ng-container>
+</div>
+
+<!-- Standalone Task Form Component Modal Overlay -->
+<app-task-form 
+  *ngIf="showTaskForm" 
+  (close)="showTaskForm = false" 
+  (save)="onTaskSaved()">
+</app-task-form>

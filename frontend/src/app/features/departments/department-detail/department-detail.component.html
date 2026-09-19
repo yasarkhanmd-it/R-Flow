@@ -1,0 +1,259 @@
+<div class="detail-page" *ngIf="!isLoading; else loadingTpl">
+
+  <!-- ── Toast Messages ─────────────────────────────────────────── -->
+  <div class="toast success-toast" *ngIf="successMessage">
+    <lucide-icon [img]="CheckCircle" [size]="16"></lucide-icon> {{ successMessage }}
+  </div>
+  <div class="toast error-toast" *ngIf="errorMessage">
+    <lucide-icon [img]="AlertCircle" [size]="16"></lucide-icon> {{ errorMessage }}
+    <button class="toast-close" (click)="errorMessage = null">×</button>
+  </div>
+
+  <!-- ── Breadcrumb + Title ──────────────────────────────────────── -->
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <lucide-icon [img]="Layers" [size]="14"></lucide-icon>
+      {{ verticalName || 'Verticals' }}
+      <lucide-icon [img]="ChevronRight" [size]="12"></lucide-icon>
+      <lucide-icon [img]="ArrowLeft" [size]="14"></lucide-icon>
+      Back
+    </button>
+
+    <div class="dept-hero" *ngIf="department">
+      <div class="dept-avatar-large">{{ getInitials(department.departmentName) }}</div>
+      <div class="hero-info">
+        <div class="hero-meta">
+          <span class="dept-code">{{ department.departmentCode }}</span>
+          <span class="status-pill" [class.active]="department.status === 'Active'" [class.inactive]="department.status !== 'Active'">
+            {{ department.status }}
+          </span>
+          <span class="vertical-pill" *ngIf="verticalName">
+            <lucide-icon [img]="Layers" [size]="11"></lucide-icon>
+            {{ verticalName }}
+          </span>
+        </div>
+        <h1 class="hero-title">{{ department.departmentName }}</h1>
+        <p class="hero-desc">{{ department.description || 'No description provided.' }}</p>
+        <div class="hero-manager">
+          <lucide-icon [img]="UserCheck" [size]="14"></lucide-icon>
+          Manager: <strong>{{ getManagerNames() }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab Bar ──────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button
+      *ngFor="let tab of tabs"
+      class="tab-btn"
+      [class.active]="activeTab === tab.id"
+      (click)="setTab(tab.id)"
+      [id]="'tab-' + tab.id">
+      <lucide-icon [img]="tab.icon" [size]="15"></lucide-icon>
+      {{ tab.label }}
+    </button>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- TAB: OVERVIEW ─────────────────────────────────────────────── -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'overview'">
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <lucide-icon [img]="FolderKanban" [size]="22"></lucide-icon>
+        <div>
+          <div class="stat-value">{{ department?.projectCount ?? projects.length }}</div>
+          <div class="stat-label">Total Projects</div>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <lucide-icon [img]="CheckCircle2" [size]="22"></lucide-icon>
+        <div>
+          <div class="stat-value">{{ activeProjects }}</div>
+          <div class="stat-label">Active Projects</div>
+        </div>
+      </div>
+      <div class="stat-card purple">
+        <lucide-icon [img]="Activity" [size]="22"></lucide-icon>
+        <div>
+          <div class="stat-value">{{ completedProjects }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+      <div class="stat-card teal">
+        <lucide-icon [img]="Users" [size]="22"></lucide-icon>
+        <div>
+          <div class="stat-value">{{ department?.employeeCount ?? employees.length }}</div>
+          <div class="stat-label">Members</div>
+        </div>
+      </div>
+      <div class="stat-card orange">
+        <lucide-icon [img]="UserCheck" [size]="22"></lucide-icon>
+        <div>
+          <div class="stat-value">{{ department?.teamLeadCount ?? leads.length }}</div>
+          <div class="stat-label">Team Leads</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Projects -->
+    <div class="section" *ngIf="projects.length > 0">
+      <h3 class="section-title">Recent Projects</h3>
+      <div class="project-list">
+        <div class="project-row" *ngFor="let p of projects.slice(0,5)">
+          <div class="project-left">
+            <div class="project-dot" [style.background]="getStatusColor(p.status)"></div>
+            <div>
+              <div class="project-name">{{ p.name }}</div>
+              <div class="project-meta">Manager: {{ p.managerId?.employeeName || '—' }}</div>
+            </div>
+          </div>
+          <span class="project-status-badge" [style.color]="getStatusColor(p.status)" [style.background]="getStatusColor(p.status) + '22'">
+            {{ p.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-tab" *ngIf="projects.length === 0">
+      <lucide-icon [img]="FolderKanban" [size]="36"></lucide-icon>
+      <p>No projects in this department yet.</p>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- TAB: PROJECTS ─────────────────────────────────────────────── -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'projects'">
+    <div class="section-header">
+      <h3 class="section-title">Department Projects</h3>
+      <span class="count-badge">{{ projects.length }}</span>
+    </div>
+    <div class="project-cards" *ngIf="projects.length > 0">
+      <div class="project-card" *ngFor="let p of projects">
+        <div class="project-card-header">
+          <lucide-icon [img]="FolderKanban" [size]="16"></lucide-icon>
+          <span class="project-name">{{ p.name }}</span>
+          <span class="project-status-badge ml-auto" [style.color]="getStatusColor(p.status)" [style.background]="getStatusColor(p.status) + '22'">{{ p.status }}</span>
+        </div>
+        <p class="project-desc">{{ p.description || 'No description.' }}</p>
+        <div class="project-meta-row">
+          <span><lucide-icon [img]="User" [size]="12"></lucide-icon> {{ p.managerId?.employeeName || '—' }}</span>
+          <span *ngIf="p.leadId"><lucide-icon [img]="UserCheck" [size]="12"></lucide-icon> {{ p.leadId?.employeeName }}</span>
+          <span><lucide-icon [img]="Users" [size]="12"></lucide-icon> {{ p.members?.length || 0 }} members</span>
+        </div>
+      </div>
+    </div>
+    <div class="empty-tab" *ngIf="projects.length === 0">
+      <lucide-icon [img]="FolderKanban" [size]="36"></lucide-icon>
+      <p>No projects assigned to this department.</p>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- TAB: EMPLOYEES ────────────────────────────────────────────── -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'employees'">
+    <div class="section-header">
+      <h3 class="section-title">Department Members</h3>
+      <span class="count-badge">{{ employees.length }}</span>
+    </div>
+    <div class="user-grid" *ngIf="employees.length > 0">
+      <div class="user-card" *ngFor="let u of employees">
+        <div class="user-avatar" [style.background]="getRoleColor(u.role) + '22'" [style.color]="getRoleColor(u.role)">
+          {{ getInitials(u.employeeName) }}
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ u.employeeName }}</div>
+          <div class="user-meta"><lucide-icon [img]="Hash" [size]="11"></lucide-icon> {{ u.employeeId }}</div>
+          <div class="user-meta"><lucide-icon [img]="Mail" [size]="11"></lucide-icon> {{ u.email }}</div>
+        </div>
+        <span class="role-tag" [style.background]="getRoleColor(u.role) + '20'" [style.color]="getRoleColor(u.role)">{{ u.role }}</span>
+      </div>
+    </div>
+    <div class="empty-tab" *ngIf="employees.length === 0">
+      <lucide-icon [img]="Users" [size]="36"></lucide-icon>
+      <p>No employees assigned to this department.</p>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- TAB: TEAM LEADS ───────────────────────────────────────────── -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'leads'">
+    <div class="section-header">
+      <h3 class="section-title">Team Leads</h3>
+      <span class="count-badge">{{ leads.length }}</span>
+    </div>
+    <div class="user-grid" *ngIf="leads.length > 0">
+      <div class="user-card lead-card" *ngFor="let u of leads">
+        <div class="user-avatar lead-avatar">{{ getInitials(u.employeeName) }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ u.employeeName }}</div>
+          <div class="user-meta"><lucide-icon [img]="Hash" [size]="11"></lucide-icon> {{ u.employeeId }}</div>
+          <div class="user-meta"><lucide-icon [img]="Mail" [size]="11"></lucide-icon> {{ u.email }}</div>
+        </div>
+        <span class="role-tag lead-tag">Team Lead</span>
+      </div>
+    </div>
+    <div class="empty-tab" *ngIf="leads.length === 0">
+      <lucide-icon [img]="UserCheck" [size]="36"></lucide-icon>
+      <p>No team leads assigned to this department.</p>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- TAB: SETTINGS ─────────────────────────────────────────────── -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'settings'">
+    <div class="settings-section" *ngIf="isManager || isSuperAdmin || isAdmin; else noAccess">
+      <h3 class="section-title">Department Settings</h3>
+      <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="settings-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department Name *</label>
+            <input type="text" class="form-input" formControlName="departmentName" placeholder="Department Name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department Code *</label>
+            <input type="text" class="form-input" formControlName="departmentCode" placeholder="CODE" style="text-transform:uppercase">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" formControlName="description" rows="4" placeholder="Department description…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" formControlName="status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-save" [disabled]="settingsForm.invalid || isUpdating" id="save-settings-btn">
+            <span *ngIf="!isUpdating">Save Changes</span>
+            <span *ngIf="isUpdating" class="spinner-inline"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <ng-template #noAccess>
+      <div class="empty-tab">
+        <lucide-icon [img]="Settings" [size]="36"></lucide-icon>
+        <p>You don't have permission to edit department settings.</p>
+      </div>
+    </ng-template>
+  </div>
+
+</div>
+
+<!-- ── Loading Template ────────────────────────────────────────── -->
+<ng-template #loadingTpl>
+  <div class="loading-full">
+    <div class="spinner-ring"></div>
+    <p>Loading department…</p>
+  </div>
+</ng-template>

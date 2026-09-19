@@ -1,0 +1,206 @@
+<div class="login-container">
+  <!-- Left Side: Brand Information (40%) -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="logo-area">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <span class="company-name">ROBIS</span>
+      </div>
+      
+      <div class="message-area">
+        <h1>Welcome to RFlow</h1>
+        <h2>Project Management Platform</h2>
+        
+        <div class="value-prop">
+          <p>Plan.</p>
+          <p>Collaborate.</p>
+          <p>Track.</p>
+          <p>Deliver.</p>
+        </div>
+        
+        <p class="description">Manage projects, departments, teams and tasks from one centralized platform.</p>
+      </div>
+    </div>
+    
+    <div class="brand-footer">
+      <span>Version 1.0</span>
+      <span>Powered by ROBIS</span>
+    </div>
+  </div>
+
+  <!-- Right Side: Registration Form (60%) -->
+  <div class="form-panel">
+    <div class="login-card">
+      <div class="card-header">
+        <h2 class="app-logo">RFlow</h2>
+        <p class="app-subtitle">Project Management System</p>
+      </div>
+
+      <div class="card-body">
+        <h3 class="welcome-text">Create Your Account</h3>
+        <p class="instruction-text">Register using your official company email.</p>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+          <!-- Employee Name -->
+          <div class="form-group">
+            <label for="employeeName">Employee Name</label>
+            <input type="text" id="employeeName" formControlName="employeeName" placeholder="Enter your full name"
+                   [class.invalid]="hasError('employeeName', 'required') || hasError('employeeName', 'minlength')">
+            <span class="error-text" *ngIf="hasError('employeeName', 'required')">Employee Name is required.</span>
+            <span class="error-text" *ngIf="hasError('employeeName', 'minlength')">Name must be at least 3 characters.</span>
+          </div>
+
+          <div class="form-row">
+            <!-- Office Email -->
+            <div class="form-group half">
+              <label for="email">Office Email</label>
+              <input type="email" id="email" formControlName="email" placeholder="john.doe@motherson.com"
+                     [class.invalid]="hasError('email', 'required') || hasError('email', 'pattern')">
+              <span class="error-text" *ngIf="hasError('email', 'required')">Office email is required.</span>
+              <span class="error-text" *ngIf="hasError('email', 'pattern')">Only official company email is allowed.</span>
+            </div>
+
+            <!-- Employee ID -->
+            <div class="form-group half">
+              <label for="employeeId">Employee ID</label>
+              <input type="text" id="employeeId" formControlName="employeeId" placeholder="Enter Employee ID"
+                     [class.invalid]="hasError('employeeId', 'required')">
+              <span class="error-text" *ngIf="hasError('employeeId', 'required')">Employee ID is required.</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Department -->
+            <div class="form-group half">
+              <label for="department">Department</label>
+              <select id="department" formControlName="department" [class.invalid]="hasError('department', 'required')">
+                <option value="" disabled selected>Select Department</option>
+                <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+              </select>
+              <span class="error-text" *ngIf="hasError('department', 'required')">Department is required.</span>
+            </div>
+
+            <!-- Role -->
+            <div class="form-group half">
+              <label for="role">Role</label>
+              <select id="role" formControlName="role" [class.invalid]="hasError('role', 'required')">
+                <option value="" disabled selected>Select Role</option>
+                <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+              </select>
+              <span class="error-text" *ngIf="hasError('role', 'required')">Role is required.</span>
+            </div>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="text" id="phone" formControlName="phone" placeholder="Enter 10-digit mobile number"
+                   [class.invalid]="hasError('phone', 'pattern')">
+            <span class="error-text" *ngIf="hasError('phone', 'pattern')">Must be exactly 10 digits.</span>
+          </div>
+
+          <div class="form-row">
+            <!-- Password -->
+            <div class="form-group half">
+              <label for="password">Password</label>
+              <div class="password-input-wrapper">
+                <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" 
+                       placeholder="Create password"
+                       [class.invalid]="hasError('password', 'required')">
+                <button type="button" class="toggle-password" (click)="togglePasswordVisibility('password')">
+                  <!-- Eye Icon (Hide logic is in component) -->
+                  <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                  </svg>
+                </button>
+              </div>
+              
+              <span class="error-text" *ngIf="hasError('password', 'required')">Password is required.</span>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group half">
+              <label for="confirmPassword">Confirm Password</label>
+              <div class="password-input-wrapper">
+                <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword" 
+                       placeholder="Confirm password"
+                       [class.invalid]="hasError('confirmPassword', 'required') || registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
+                <button type="button" class="toggle-password" (click)="togglePasswordVisibility('confirm')">
+                  <!-- Eye Icon -->
+                  <svg *ngIf="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <svg *ngIf="showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                  </svg>
+                </button>
+              </div>
+              <span class="error-text" *ngIf="hasError('confirmPassword', 'required')">Confirm password is required.</span>
+              <span class="error-text" *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">Passwords Do Not Match.</span>
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="form-group terms">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="terms" [class.invalid]="hasError('terms', 'required')">
+              <span>I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a>.</span>
+            </label>
+            <span class="error-text" *ngIf="hasError('terms', 'required')">You must agree to the terms.</span>
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="isProcessing">
+              <span *ngIf="!isProcessing">Register</span>
+              <span *ngIf="isProcessing" class="spinner"></span>
+            </button>
+            <button type="button" class="btn-secondary" (click)="goToLogin()">Back to Login</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card-footer">
+        <p>Already have an account? <a routerLink="/login">Sign In</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" *ngIf="showSuccessModal || showErrorModal">
+  
+  <!-- Success Modal -->
+  <div class="modal-content success" *ngIf="showSuccessModal">
+    <div class="icon-circle success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    </div>
+    <h2>Registration Successful</h2>
+    <p>Your account has been created successfully.</p>
+    <p>Your registration request has been sent for approval. You will be able to log in after your account has been approved by your Manager or Team Lead.</p>
+    <button type="button" class="btn-primary modal-btn" (click)="goToLogin()">Go to Login</button>
+  </div>
+
+  <!-- Error Modal -->
+  <div class="modal-content error" *ngIf="showErrorModal">
+    <div class="icon-circle error-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <h2>Registration Failed</h2>
+    <p>{{ serverError || 'Something went wrong.' }}</p>
+    <p>Please try again later or contact your IT administrator.</p>
+    <button type="button" class="btn-secondary modal-btn" (click)="closeModals()">Close</button>
+  </div>
+</div>

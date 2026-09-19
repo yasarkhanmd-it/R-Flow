@@ -1,0 +1,173 @@
+<div class="list-page">
+
+  <!-- ── Toast Messages ─────────────────────────────────────────────── -->
+  <div class="toast success-toast" *ngIf="successMessage">
+    <lucide-icon [img]="CheckCircle" [size]="16"></lucide-icon> {{ successMessage }}
+  </div>
+  <div class="toast error-toast" *ngIf="errorMessage">
+    <lucide-icon [img]="AlertCircle" [size]="16"></lucide-icon> {{ errorMessage }}
+    <button class="toast-close" (click)="errorMessage = null">×</button>
+  </div>
+
+  <!-- ── Page Header ─────────────────────────────────────────────────── -->
+  <header class="page-title-row">
+    <div>
+      <h1>User Management</h1>
+      <p>{{ filteredUsers.length }} user{{ filteredUsers.length !== 1 ? 's' : '' }} registered</p>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ─────────────────────────────────────────────────────── -->
+  <div class="list-toolbar">
+    <div class="toolbar-actions">
+      <label class="search-box">
+        <lucide-icon [img]="Search" [size]="16"></lucide-icon>
+        <input type="text" placeholder="Search by name, email, role, department..." [value]="searchTerm" (input)="onSearch($event)">
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Loading ─────────────────────────────────────────────────────── -->
+  <div class="loading-state" *ngIf="isLoading">
+    <p>Loading users...</p>
+  </div>
+
+  <!-- ── Empty State ─────────────────────────────────────────────────── -->
+  <section class="empty-panel" *ngIf="!isLoading && filteredUsers.length === 0">
+    <div class="empty-art">
+      <lucide-icon [img]="Users" [size]="62"></lucide-icon>
+    </div>
+    <h2>{{ searchTerm ? 'No users found' : 'No users yet' }}</h2>
+    <p>{{ searchTerm ? 'Try adjusting your search.' : 'No registered users to display.' }}</p>
+  </section>
+
+  <!-- ── User Cards ──────────────────────────────────────────────────── -->
+  <section class="cards-grid-container" *ngIf="!isLoading && filteredUsers.length > 0">
+    <div class="cards-grid">
+      <div class="card user-card" *ngFor="let user of filteredUsers">
+
+        <!-- Avatar + Name -->
+        <div class="card-header">
+          <div class="user-avatar">{{ getInitials(user.employeeName) }}</div>
+          <div class="user-info">
+            <h3 class="card-title">{{ user.employeeName }}</h3>
+            <span class="user-employee-id">{{ user.employeeId }}</span>
+          </div>
+          <div class="badge-group">
+            <span class="badge" [ngClass]="getRoleBadgeClass(user.role)">{{ user.role }}</span>
+            <span class="badge" [ngClass]="getStatusBadgeClass(user.status)">{{ user.status }}</span>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value text-muted">{{ user.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Department:</span>
+            <span class="info-value">
+              <span *ngIf="user.departmentId" class="dept-assigned">
+                <lucide-icon [img]="Building2" [size]="12"></lucide-icon>
+                {{ getDeptName(user) }}
+              </span>
+              <span *ngIf="!user.departmentId" class="dept-unassigned">
+                Not Assigned
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card-footer">
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="openAssignModal(user)"
+            *ngIf="!user.superAdmin"
+          >
+            <lucide-icon [img]="Building2" [size]="13"></lucide-icon>
+            {{ user.departmentId ? 'Change Dept' : 'Assign Dept' }}
+          </button>
+          <button
+            class="btn btn-outline btn-sm btn-danger-outline"
+            (click)="removeDepartment(user)"
+            *ngIf="user.departmentId && !user.superAdmin"
+            title="Remove from department"
+          >
+            <lucide-icon [img]="UserX" [size]="13"></lucide-icon>
+            Remove
+          </button>
+          <span *ngIf="user.superAdmin" class="super-admin-badge">
+            <lucide-icon [img]="Shield" [size]="13"></lucide-icon> Super Admin
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── Assign Department Modal ──────────────────────────────────────────────── -->
+<div class="modal-backdrop" *ngIf="showAssignModal" (click)="closeModal()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Assign Department</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <lucide-icon [img]="X" [size]="20"></lucide-icon>
+      </button>
+    </div>
+
+    <form [formGroup]="assignForm" (ngSubmit)="onAssignDepartment()" style="display:flex;flex-direction:column;flex:1">
+      <div class="modal-body">
+
+        <!-- User info summary -->
+        <div class="user-summary-box">
+          <div class="user-avatar sm">{{ getInitials(selectedUser?.employeeName || '') }}</div>
+          <div>
+            <div class="summary-name">{{ selectedUser?.employeeName }}</div>
+            <div class="summary-meta">{{ selectedUser?.email }} · {{ selectedUser?.role }}</div>
+          </div>
+        </div>
+
+        <!-- Current dept -->
+        <div class="form-group mt-3" *ngIf="selectedUser?.departmentId">
+          <label>Current Assignment</label>
+          <p class="current-dept-text">{{ getDeptName(selectedUser!) }}</p>
+        </div>
+
+        <!-- Select new Vertical -->
+        <div class="form-group mt-3">
+          <label>Select Vertical *</label>
+          <select formControlName="verticalId" class="form-control">
+            <option value="">— Select Vertical —</option>
+            <option *ngFor="let vert of verticals" [value]="vert._id">{{ vert.name }}</option>
+          </select>
+          <div class="text-xs" style="color:#ef4444" *ngIf="assignForm.get('verticalId')?.invalid && assignForm.get('verticalId')?.touched">
+            Please select a vertical.
+          </div>
+        </div>
+
+        <!-- Select new dept -->
+        <div class="form-group mt-3">
+          <label>Select Department *</label>
+          <select formControlName="departmentId" class="form-control">
+            <option value="">— Select Department —</option>
+            <option *ngFor="let dept of verticalDepartments" [value]="dept._id">{{ dept.departmentName }}</option>
+          </select>
+          <div class="text-xs" style="color:#ef4444" *ngIf="assignForm.get('departmentId')?.invalid && assignForm.get('departmentId')?.touched">
+            Please select a department.
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="assignForm.invalid || isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Assign Department' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

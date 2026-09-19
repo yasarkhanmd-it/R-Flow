@@ -1,0 +1,178 @@
+<div class="timeline-page-container">
+  
+  <!-- PAGE HEADER -->
+  <div class="timeline-page-header">
+    <div class="header-breadcrumbs">
+      <span>My Projects</span>
+      <lucide-icon [img]="ChevronRight" [size]="14"></lucide-icon>
+      <span class="active">Timeline</span>
+    </div>
+  </div>
+
+  <div class="timeline-tab-content">
+    <div *ngIf="loading" class="timeline-loading">
+      <div class="loading-spinner"></div>
+      <p>Loading project timeline...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <!-- Top Filter & Toggle Row (Order: Vertical -> Department -> Status -> Reset) -->
+      <div class="tl-top-bar">
+        <div class="tl-filters">
+          <!-- 1. Vertical Filter (FIRST) -->
+          <select class="tl-select" [(ngModel)]="verticalFilter" (change)="onVerticalChange()">
+            <option value="All verticals">All verticals</option>
+            <option *ngFor="let vert of verticalsList" [value]="vert.name">{{ vert.name }}</option>
+          </select>
+
+          <!-- 2. Department Filter (SECOND - Dynamically filtered by Vertical) -->
+          <select class="tl-select" [(ngModel)]="deptFilter" (change)="onDepartmentChange()">
+            <option value="All departments">All departments</option>
+            <option *ngFor="let dept of filteredDepartmentsList" [value]="dept.departmentName">{{ dept.departmentName }}</option>
+          </select>
+
+          <!-- 3. Status Filter (THIRD) -->
+          <select class="tl-select" [(ngModel)]="statusFilter" (change)="onStatusChange()">
+            <option value="All statuses">All statuses</option>
+            <option value="On Track">On Track</option>
+            <option value="At Risk">At Risk</option>
+            <option value="Delayed">Delayed</option>
+            <option value="Completed">Completed</option>
+          </select>
+
+          <!-- 4. Reset Filters Button (FOURTH) -->
+          <button class="tl-btn-reset" (click)="resetFilters()" title="Reset Filters to Show All Departments & Verticals">
+            <lucide-icon [img]="RotateCcw" [size]="14"></lucide-icon>
+            <span>Reset</span>
+          </button>
+        </div>
+
+        <div class="tl-view-toggle">
+          <button [class.active]="timelineViewMode === 'modules'" (click)="setTimelineViewMode('modules')">Projects</button>
+          <button [class.active]="timelineViewMode === 'tasks'" (click)="setTimelineViewMode('tasks')">Tasks + resources</button>
+        </div>
+      </div>
+
+      <!-- 4 KPI Summary Cards -->
+      <div class="tl-kpi-row">
+        <div class="tl-kpi-card">
+          <div class="kpi-label">PROJECTS SHOWN</div>
+          <div class="kpi-value-lg">{{ modulesShown }} <span class="kpi-sub">of {{ projects.length }} total</span></div>
+        </div>
+        <div class="tl-kpi-card">
+          <div class="kpi-label">ON TRACK / AT RISK / DELAYED</div>
+          <div class="kpi-value-bold">
+            {{ onTrackCount }} <span class="dot">•</span> {{ atRiskCount }} <span class="dot">•</span> {{ delayedCount }}
+          </div>
+        </div>
+        <div class="tl-kpi-card">
+          <div class="kpi-label">BEHIND BASELINE</div>
+          <div class="kpi-value-amber">{{ behindBaselineCount }}</div>
+        </div>
+        <div class="tl-kpi-card">
+          <div class="kpi-label">TASKS SHOWN</div>
+          <div class="kpi-value-lg">{{ timelineViewMode === 'tasks' ? tasksShown : '-' }}</div>
+        </div>
+      </div>
+
+      <!-- Empty Filtered State -->
+      <div *ngIf="filteredProjects.length === 0" class="tl-empty-state">
+        <lucide-icon [img]="AlertTriangle" [size]="32" class="text-amber-500 mb-2"></lucide-icon>
+        <h4>No projects found for selected filters</h4>
+        <p>Try selecting a different vertical or department, or click Reset.</p>
+        <button class="btn-secondary mt-3" (click)="resetFilters()">
+          <lucide-icon [img]="RotateCcw" [size]="14"></lucide-icon>
+          <span>Reset Filters</span>
+        </button>
+      </div>
+
+      <!-- Gantt Chart Wrapper -->
+      <div class="tl-chart-wrapper" *ngIf="filteredProjects.length > 0">
+        <div class="tl-chart-header">
+          <h3 *ngIf="timelineViewMode === 'modules'">Project timeline</h3>
+          <h3 *ngIf="timelineViewMode === 'tasks'">Task breakdown with resources</h3>
+        </div>
+
+        <div class="gantt-container tl-gantt-container">
+          <!-- Left Sidebar -->
+          <div class="gantt-sidebar tl-sidebar">
+            <div class="gantt-sidebar-body tl-sidebar-body" #sidebarBody (scroll)="onSidebarScroll()">
+              <ng-container *ngFor="let row of flatGanttRows">
+                <div class="gantt-row-label tl-row-label" [ngClass]="'level-' + row.level + ' type-' + row.type" (click)="row.type === 'module' && navigateToProject(row.id)">
+                  
+                  <!-- Module/Project Label -->
+                  <ng-container *ngIf="row.type === 'module' || row.type === 'milestone'">
+                    <div class="tl-module-name">{{ row.name }}</div>
+                    <div class="tl-module-dept">{{ row.department }}</div>
+                  </ng-container>
+
+                  <!-- Task Label -->
+                  <ng-container *ngIf="row.type === 'task'">
+                    <div class="tl-task-name">{{ row.name }}</div>
+                    <div class="tl-task-meta">
+                      <span class="assignee">&#64;{{ row.assignee }}</span>
+                      <span *ngIf="row.isOverdue" class="status-overdue">• overdue</span>
+                    </div>
+                  </ng-container>
+
+                </div>
+              </ng-container>
+            </div>
+            <div class="tl-legend">
+              <span *ngIf="timelineViewMode === 'modules'">Solid fill = % complete • ◆ = milestone (teal done, amber upcoming, red overdue) • thin grey bar = baseline plan • dark vertical line = today • click to edit.</span>
+              <span *ngIf="timelineViewMode === 'tasks'">&#64; shows the assigned resource • red border = overdue • dark vertical line = today • click a bar or label to edit the task.</span>
+            </div>
+          </div>
+
+          <!-- Right Side: Grid & Bars -->
+          <div class="gantt-chart-area tl-chart-area" #chartArea (scroll)="onChartScroll()">
+            <!-- Header dates (Current month -> 12 months forward, formatted Sep'26, Oct'26...) -->
+            <div class="gantt-header-dates tl-header-dates">
+              <div class="gantt-date-cell tl-date-cell" *ngFor="let header of ganttHeaders" [style.min-width.px]="ganttColWidth" [class.is-today]="header.isToday">
+                <div class="date-top">{{ header.top }}</div>
+              </div>
+            </div>
+            
+            <div class="gantt-grid-body tl-grid-body">
+              <!-- Grid lines -->
+              <div class="gantt-grid-bg tl-grid-bg">
+                <div class="gantt-grid-col tl-grid-col" *ngFor="let header of ganttHeaders" [style.min-width.px]="ganttColWidth" [class.is-today]="header.isToday"></div>
+              </div>
+
+              <!-- Gantt Rows & Bars -->
+              <ng-container *ngFor="let row of flatGanttRows">
+                <div class="gantt-row-bars tl-row-bars" [ngClass]="'type-' + row.type">
+                  <ng-container *ngIf="row.start && row.end">
+                    
+                    <div class="gantt-bar-wrapper tl-bar-wrapper"
+                         [style.left.px]="getGanttBarLeft(row.start)"
+                         [style.width.px]="getGanttBarWidth(row.start, row.end)">
+                      
+                      <div class="tl-bar"
+                           [style.background-color]="row.palette?.bg || '#fee2e2'"
+                           [style.border-color]="row.palette?.border || '#fca5a5'"
+                           [ngClass]="row.status?.toLowerCase().replace(' ', '-') || ''"
+                           [class.is-task]="row.type === 'task'"
+                           [class.is-overdue]="row.isOverdue">
+                        
+                        <div class="tl-bar-fill"
+                             [style.width.%]="row.progress || 60"
+                             [style.background-color]="row.palette?.fill || '#dc2626'"></div>
+                        
+                        <!-- Milestone Diamond (if not task) -->
+                        <div class="tl-milestone-marker" *ngIf="row.type !== 'task'" [style.left.%]="85">
+                          ◆
+                        </div>
+                      </div>
+
+                    </div>
+                  </ng-container>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

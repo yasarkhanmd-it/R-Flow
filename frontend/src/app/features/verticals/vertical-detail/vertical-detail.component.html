@@ -1,0 +1,259 @@
+<div class="list-page">
+
+  <!-- Toast Messages -->
+  <div class="toast success-toast" *ngIf="successMessage">
+    <lucide-icon [img]="CheckCircle" [size]="18"></lucide-icon>
+    {{ successMessage }}
+  </div>
+  <div class="toast error-toast" *ngIf="errorMessage">
+    <lucide-icon [img]="AlertCircle" [size]="18"></lucide-icon>
+    {{ errorMessage }}
+    <button class="toast-close" (click)="errorMessage = null">
+      <lucide-icon [img]="X" [size]="14"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <button class="breadcrumb-btn" (click)="goBack()">
+      <lucide-icon [img]="Layers" [size]="14"></lucide-icon>
+      Verticals
+    </button>
+    <lucide-icon [img]="ChevronRight" [size]="14" class="bc-sep"></lucide-icon>
+    <span class="breadcrumb-current">{{ vertical?.name || '...' }}</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-title-row">
+    <div>
+      <h1>{{ vertical?.name || 'Loading...' }}</h1>
+      <p *ngIf="vertical?.description">{{ vertical?.description }}</p>
+      <p *ngIf="!vertical?.description && !isLoading">No description</p>
+    </div>
+    
+    <div class="toolbar-actions" *ngIf="canManage">
+      <button class="primary-action" (click)="openCreateDeptModal()" id="add-department-btn">
+        <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+        Add Department
+      </button>
+    </div>
+  </div>
+  
+  <!-- Section Title & List Toolbar -->
+  <div class="section-header">
+    <div class="section-title">
+      <lucide-icon [img]="Building2" [size]="18"></lucide-icon>
+      <span>Departments</span>
+      <span class="count-badge">{{ departments.length }}</span>
+    </div>
+  </div>
+
+  <div class="list-toolbar">
+    <div class="search-box">
+      <lucide-icon [img]="Search" [size]="16"></lucide-icon>
+      <input
+        type="text"
+        placeholder="Search departments..."
+        [value]="searchTerm"
+        (input)="onSearch($event)"
+      />
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="empty-panel" *ngIf="deptLoading">
+    <div class="empty-art">
+      <lucide-icon [img]="Building2" [size]="48"></lucide-icon>
+    </div>
+    <h2>Loading departments...</h2>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-panel" *ngIf="!deptLoading && filteredDepartments.length === 0">
+    <div class="empty-art">
+      <lucide-icon [img]="Building2" [size]="48"></lucide-icon>
+    </div>
+    <h2>No departments yet</h2>
+    <p *ngIf="searchTerm">No departments match your search.</p>
+    <p *ngIf="!searchTerm && canManage">Add the first department to this vertical.</p>
+    <button *ngIf="!searchTerm && canManage" class="primary-action mt-3" (click)="openCreateDeptModal()">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+      Add Department
+    </button>
+  </div>
+
+  <!-- Departments Grid -->
+  <div class="cards-grid-container" *ngIf="!deptLoading && filteredDepartments.length > 0">
+    <div class="cards-grid">
+      <div
+        class="card"
+        *ngFor="let dept of filteredDepartments; let i = index"
+        (click)="viewDepartment(dept._id)"
+        id="dept-card-{{ dept._id }}"
+      >
+        <!-- Card Header -->
+        <div class="card-header">
+          <div class="card-title-row">
+            <h3 class="card-title">{{ dept.departmentName }}</h3>
+            <div class="card-actions" *ngIf="canManage" (click)="$event.stopPropagation()">
+              <button class="btn-icon-edit" (click)="openEditDeptModal(dept, $event)" id="edit-dept-{{ dept._id }}">
+                <lucide-icon [img]="Edit2" [size]="14"></lucide-icon>
+              </button>
+              <button class="btn-icon-delete" (click)="confirmDelete(dept, $event)" id="delete-dept-{{ dept._id }}">
+                <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+          </div>
+          <div class="dept-code-badge">{{ dept.departmentCode }}</div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body">
+          <p class="dept-description">{{ dept.description || 'No description.' }}</p>
+
+          <!-- Manager(s) -->
+          <div class="manager-row">
+            <lucide-icon [img]="UserCog" [size]="14" class="meta-icon"></lucide-icon>
+            <span class="meta-label">Manager:</span>
+            <span class="meta-value">{{ getManagerNames(dept) }}</span>
+          </div>
+
+          <div class="info-row">
+             <span><lucide-icon [img]="Users" [size]="14"></lucide-icon> {{ dept.userCount ?? 0 }}</span>
+             <span><lucide-icon [img]="FolderKanban" [size]="14"></lucide-icon> {{ dept.projectCount ?? 0 }}</span>
+             <span class="badge" [class.badge-success]="dept.status === 'Active'" [class.badge-danger]="dept.status !== 'Active'">
+              {{ dept.status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="card-footer">
+          <button class="btn-view" (click)="viewDepartment(dept._id); $event.stopPropagation()">
+            View Department
+            <lucide-icon [img]="ChevronRight" [size]="14"></lucide-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Add / Edit Department Modal (popup) -->
+  <div class="modal-backdrop" *ngIf="showDeptModal" (click)="closeDeptModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>{{ isEditingDept ? 'Edit Department' : 'Add Department' }}</h2>
+          <p class="modal-subtitle">in <strong>{{ vertical?.name }}</strong></p>
+        </div>
+        <button class="close-btn" (click)="closeDeptModal()">
+          <lucide-icon [img]="X" [size]="20"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form [formGroup]="deptForm" (ngSubmit)="onSubmitDept()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dept-name">Department Name <span class="required">*</span></label>
+              <input
+                id="dept-name"
+                type="text"
+                formControlName="departmentName"
+                class="form-control"
+                placeholder="e.g. Design, Software"
+                [class.error]="deptForm.get('departmentName')?.invalid && deptForm.get('departmentName')?.touched"
+              />
+              <span class="field-error" *ngIf="deptForm.get('departmentName')?.invalid && deptForm.get('departmentName')?.touched">
+                Department name is required.
+              </span>
+            </div>
+            <div class="form-group">
+              <label for="dept-code">Code <span class="required">*</span></label>
+              <input
+                id="dept-code"
+                type="text"
+                formControlName="departmentCode"
+                class="form-control"
+                placeholder="e.g. DESIGN"
+                [class.error]="deptForm.get('departmentCode')?.invalid && deptForm.get('departmentCode')?.touched"
+              />
+              <span class="field-error" *ngIf="deptForm.get('departmentCode')?.invalid && deptForm.get('departmentCode')?.touched">
+                Valid code is required (alphanumeric, spaces, hyphens).
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="dept-description">Description</label>
+            <textarea
+              id="dept-description"
+              formControlName="description"
+              class="form-control"
+              placeholder="Brief description..."
+              rows="2"
+            ></textarea>
+          </div>
+
+          <!-- Manager selection -->
+          <div class="form-group">
+            <label for="manager-select">Assign Manager</label>
+            <select
+              *ngIf="availableManagers.length > 0"
+              id="manager-select"
+              class="form-control"
+              [(ngModel)]="selectedManagerId"
+              [ngModelOptions]="{standalone: true}"
+            >
+              <option value="">Select a Manager</option>
+              <option *ngFor="let mgr of availableManagers" [value]="mgr.id">
+                {{ mgr.employeeName }} ({{ mgr.employeeId }})
+              </option>
+            </select>
+            <p class="helper-text" *ngIf="availableManagers.length === 0">No managers available.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="dept-status">Status</label>
+            <select id="dept-status" formControlName="status" class="form-control">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" (click)="closeDeptModal()">Cancel</button>
+        <button type="submit" class="btn-primary" (click)="onSubmitDept()" [disabled]="deptForm.invalid || isSubmitting" id="submit-dept-btn">
+          {{ isSubmitting ? 'Saving...' : (isEditingDept ? 'Update Department' : 'Add Department') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-backdrop" *ngIf="showDeleteModal" (click)="cancelDelete()">
+    <div class="modal-dialog" style="max-width: 420px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 style="color: #ef4444;">Delete Department</h2>
+        <button class="close-btn" (click)="cancelDelete()">
+          <lucide-icon [img]="X" [size]="20"></lucide-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0; color: #475569; font-size: 0.875rem;">
+          Are you sure you want to delete <strong>{{ itemToDelete?.departmentName }}</strong>?
+          <br/><br/>
+          This action cannot be undone. Active projects must be completed or cancelled first.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="cancelDelete()">Cancel</button>
+        <button class="btn-danger" (click)="executeDelete()" id="confirm-delete-dept-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,96 @@
+<header class="header">
+  <div class="search-bar">
+    <lucide-icon [img]="Search" [size]="18" class="search-icon"></lucide-icon>
+    <input type="text" placeholder="Search..." class="search-input">
+  </div>
+
+  <div class="header-actions">
+    <!-- Notification Bell -->
+    <div class="user-menu">
+      <button class="icon-btn" type="button" aria-label="Notifications" (click)="toggleNotificationMenu()">
+        <lucide-icon [img]="Bell" [size]="20"></lucide-icon>
+        <span class="badge-dot" *ngIf="pendingNotifications.length > 0">{{ pendingNotifications.length }}</span>
+      </button>
+
+      <!-- Notifications Dropdown -->
+      <div class="user-dropdown notifications-dropdown" *ngIf="isNotificationMenuOpen" role="menu">
+        <div class="dropdown-header">
+          <strong>Notifications</strong>
+        </div>
+        <div class="notification-list">
+          <div class="notification-item" *ngFor="let n of notifications">
+            <div class="notif-content" [ngSwitch]="n.type">
+              <span *ngSwitchCase="'PROJECT_JOIN_REQUEST'">
+                <strong>{{ n.fromUser?.employeeName || 'Someone' }}</strong> requested to join <strong>{{ n.project?.name }}</strong>
+              </span>
+              <span *ngSwitchCase="'NEW_PROJECT_ASSIGNED'">
+                New project <strong>{{ n.project?.name || 'Project' }}</strong> has been assigned to you.
+              </span>
+              <span *ngSwitchCase="'PROJECT_UPDATED'">
+                Project <strong>{{ n.project?.name || 'Project' }}</strong> details updated.
+              </span>
+              <span *ngSwitchCase="'EMPLOYEE_COMPLETED_TASK'">
+                Employee <strong>{{ n.fromUser?.employeeName || 'Someone' }}</strong> completed task <strong>{{ n.message }}</strong>.
+              </span>
+              <span *ngSwitchCase="'TASK_OVERDUE'">
+                Task <strong>{{ n.message }}</strong> is overdue!
+              </span>
+              <span *ngSwitchCase="'EMPLOYEE_REQUESTED_CLARIFICATION'">
+                Employee <strong>{{ n.fromUser?.employeeName || 'Someone' }}</strong> requested clarification: "{{ n.message }}"
+              </span>
+              <span *ngSwitchCase="'PROJECT_ACCEPTED'">
+                Team Lead <strong>{{ n.fromUser?.employeeName || 'Someone' }}</strong> accepted project <strong>{{ n.project?.name }}</strong>.
+              </span>
+              <span *ngSwitchCase="'PROJECT_REJECTED'">
+                Team Lead <strong>{{ n.fromUser?.employeeName || 'Someone' }}</strong> rejected project <strong>{{ n.project?.name }}</strong>: "{{ n.message }}"
+              </span>
+              <span *ngSwitchDefault>
+                New notification from <strong>{{ n.fromUser?.employeeName || 'System' }}</strong>
+              </span>
+            </div>
+            <div class="notif-actions" *ngIf="n.type === 'PROJECT_JOIN_REQUEST' && n.status === 'PENDING' && (user?.role === 'Manager' || user?.role === 'Lead')">
+              <button class="btn btn-primary btn-sm" (click)="approve(n._id)">Approve</button>
+            </div>
+            <div class="notif-status text-success text-xs" *ngIf="n.type === 'PROJECT_JOIN_REQUEST' && n.status === 'APPROVED'">
+              Approved <lucide-icon [img]="Check" [size]="12"></lucide-icon>
+            </div>
+          </div>
+          <div class="notification-item text-muted text-center py-2" *ngIf="notifications.length === 0">
+            No new notifications
+          </div>
+          <div class="notification-footer text-center" style="padding: 10px; border-top: 1px solid #eee; margin-top: 5px;">
+            <a routerLink="/notifications" (click)="isNotificationMenuOpen = false" style="text-decoration: none; color: #d32f2f; font-weight: 500; font-size: 13px;">View All Notifications</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="icon-btn" type="button" aria-label="Help">
+      <lucide-icon [img]="HelpCircle" [size]="20"></lucide-icon>
+    </button>
+
+    <div class="user-menu">
+      <button class="user-profile" type="button" (click)="toggleUserMenu()" aria-haspopup="menu" [attr.aria-expanded]="isUserMenuOpen">
+        <div class="avatar">{{ userInitials }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ user?.employeeName || 'John Doe' }}</span>
+          <span class="user-role">{{ displayRole }}</span>
+        </div>
+        <lucide-icon [img]="ChevronDown" [size]="16" class="profile-chevron"></lucide-icon>
+      </button>
+
+      <div class="user-dropdown" *ngIf="isUserMenuOpen" role="menu">
+        <div class="dropdown-user">
+          <strong>{{ user?.employeeName || 'John Doe' }}</strong>
+          <span>{{ user?.email || 'employee@robis.com' }}</span>
+        </div>
+        <a class="dropdown-item" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;" routerLink="/profile" (click)="isUserMenuOpen = false">Profile</a>
+        <a class="dropdown-item" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;" routerLink="/settings" (click)="isUserMenuOpen = false">Settings</a>
+        <button class="dropdown-logout" type="button" role="menuitem" (click)="logout()">
+          <lucide-icon [img]="LogOut" [size]="18"></lucide-icon>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
