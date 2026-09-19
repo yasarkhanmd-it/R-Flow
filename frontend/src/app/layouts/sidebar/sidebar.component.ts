@@ -72,7 +72,7 @@ export class SidebarComponent {
 
   get filteredMenuItems() {
     const user = this.authService.getCurrentUser();
-    const isAdminLevel = (user as any)?.superAdmin === true || user?.role === 'Administrator';
+    const isAdminLevel = (user as any)?.superAdmin === true || user?.role === 'Administrator' || user?.role === 'Admin';
     const isManager = user?.role === 'Manager';
     return this.menuItems.filter(item => {
       if (item.adminOnly && !isAdminLevel) return false;
