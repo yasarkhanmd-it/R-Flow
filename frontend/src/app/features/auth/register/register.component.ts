@@ -28,7 +28,7 @@ export class RegisterComponent implements OnInit {
     'Quality', 'Maintenance', 'Material Handling', 'Warehouse', 'IT'
   ];
 
-  roles = ['Manager', 'Lead', 'User'];
+  roles = ['Admin', 'Manager', 'Lead', 'User'];
 
   constructor(
     private fb: FormBuilder,
