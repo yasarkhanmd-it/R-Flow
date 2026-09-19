@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  gateway-service:
+    build:
+      context: .
+      dockerfile: services/gateway-service/Dockerfile
+    container_name: rflow-gateway-service-prod
+    ports:
+      - "80:3000"
+    environment:
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - PROJECT_SERVICE_URL=http://project-service:5002
+      - STORY_SERVICE_URL=http://story-service:5003
+      - TASK_SERVICE_URL=http://task-service:5004
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5005
+      - DASHBOARD_SERVICE_URL=http://dashboard-service:5006
+      - REPORT_SERVICE_URL=http://report-service:5007
+    depends_on:
+      - auth-service
+      - project-service
+      - story-service
+      - task-service
+      - notification-service
+      - dashboard-service
+      - report-service
+    restart: always
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: rflow-auth-service-prod
+    environment:
+      - PORT=5001
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  project-service:
+    build:
+      context: .
+      dockerfile: services/project-service/Dockerfile
+    container_name: rflow-project-service-prod
+    environment:
+      - PORT=5002
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  story-service:
+    build:
+      context: .
+      dockerfile: services/story-service/Dockerfile
+    container_name: rflow-story-service-prod
+    environment:
+      - PORT=5003
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  task-service:
+    build:
+      context: .
+      dockerfile: services/task-service/Dockerfile
+    container_name: rflow-task-service-prod
+    environment:
+      - PORT=5004
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: rflow-notification-service-prod
+    environment:
+      - PORT=5005
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  dashboard-service:
+    build:
+      context: .
+      dockerfile: services/dashboard-service/Dockerfile
+    container_name: rflow-dashboard-service-prod
+    environment:
+      - PORT=5006
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+
+  report-service:
+    build:
+      context: .
+      dockerfile: services/report-service/Dockerfile
+    container_name: rflow-report-service-prod
+    environment:
+      - PORT=5007
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
