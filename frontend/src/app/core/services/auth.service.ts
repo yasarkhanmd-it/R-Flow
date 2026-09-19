@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, tap, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 
 export interface RegisterRequest {
   employeeName: string;
@@ -81,34 +81,6 @@ export class AuthService {
   }
 
   login(payload: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    // FAKE LOGIN BYPASS FOR GITHUB PAGES DEMO
-    if (payload.email === 'admin@motherson.com' && payload.password === 'Password123') {
-      const mockUser: AuthUser = {
-        id: 'mock-admin-id',
-        employeeName: 'Admin User',
-        employeeId: 'ADM-001',
-        email: 'admin@motherson.com',
-        department: 'Engineering Demo Dept',
-        phone: '555-0101',
-        role: 'admin',
-        superAdmin: true,
-        status: 'active'
-      };
-      const mockResponse: ApiResponse<LoginResponse> = {
-        success: true,
-        message: 'Mock login successful',
-        data: {
-          token: 'mock-jwt-token-12345',
-          user: mockUser
-        }
-      };
-      return of(mockResponse).pipe(
-        tap((response) => {
-          this.setSession(response.data.token, response.data.user);
-        })
-      );
-    }
-
     return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/login`, payload).pipe(
       tap((response) => {
         this.setSession(response.data.token, response.data.user);
